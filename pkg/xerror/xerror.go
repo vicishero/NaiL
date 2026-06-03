@@ -45,10 +45,6 @@ func (v ValidErrors) Errors() []string {
 }
 
 func NewError(code int, msg string) *Error {
-	// if _, ok := codes[code]; ok {
-	// 	panic(fmt.Sprintf("错误码 %d 已经存在，请更换一个", code))
-	// }
-	// codes[code] = msg
 	return &Error{code: code, msg: msg}
 }
 
@@ -86,20 +82,23 @@ func HttpStatusCode(e error) (statusCode int, code int) {
 	if code, ok = mir.HttpStatusCode(e); !ok {
 		return
 	}
-	switch code {
-	case Success.StatusCode():
+	switch {
+	case code == Success.StatusCode():
 		statusCode = http.StatusOK
-	case ServerError.StatusCode():
+	case code == ServerError.StatusCode():
 		statusCode = http.StatusInternalServerError
-	case InvalidParams.StatusCode():
+	case code == InvalidParams.StatusCode():
 		statusCode = http.StatusBadRequest
-	case UnauthorizedAuthNotExist.StatusCode(),
-		UnauthorizedAuthFailed.StatusCode(),
-		UnauthorizedTokenError.StatusCode(),
-		UnauthorizedTokenGenerate.StatusCode(),
-		UnauthorizedTokenTimeout.StatusCode():
+	case code == UnauthorizedAuthNotExist.StatusCode(),
+		code == UnauthorizedAuthFailed.StatusCode(),
+		code == UnauthorizedTokenError.StatusCode(),
+		code == UnauthorizedTokenGenerate.StatusCode(),
+		code == UnauthorizedTokenTimeout.StatusCode():
 		statusCode = http.StatusUnauthorized
-	case TooManyRequests.StatusCode():
+	case code >= 10009 && code < 10100, code >= 20000:
+		// Forbidden(10009) 及自定义权限错误码(2xxxx) → 403
+		statusCode = http.StatusForbidden
+	case code == TooManyRequests.StatusCode():
 		statusCode = http.StatusTooManyRequests
 	}
 	return

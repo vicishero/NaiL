@@ -313,6 +313,10 @@ type RateLimitConf struct {
 	Rules       []RateLimitRule `mapstructure:"rules"`        // 自定义规则
 }
 
+type SnowflakeConf struct {
+	WorkerID int64 `mapstructure:"worker_id"` // 雪花算法机器ID(0-1023)，默认取hostname hash
+}
+
 type WebProfileConf struct {
 	UseFriendship             bool   `json:"use_friendship"`
 	EnableTrendsBar           bool   `json:"enable_trends_bar"`

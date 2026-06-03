@@ -30,6 +30,7 @@ type H5UserItem struct {
 	Bio            string `json:"bio"`
 	Avatar         string `json:"avatar"`
 	Status         int    `json:"status"`
+	CreatedAt      string `json:"CreatedAt"`
 	FollowingCount int64  `json:"followingCount"`
 	FollowerCount  int64  `json:"followerCount"`
 }

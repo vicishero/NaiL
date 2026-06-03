@@ -899,6 +899,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 		Phone     string `gorm:"column:phone"`
 		Avatar    string `gorm:"column:avatar"`
 		Status    int    `gorm:"column:status"`
+		CreatedOn int64  `gorm:"column:created_on"`
 	}
 
 	var total int64
@@ -944,6 +945,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 			Bio:           "",
 			Avatar:        r.Avatar,
 			Status:        r.Status,
+			CreatedAt:     time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
 		}
 	}
 
@@ -959,6 +961,7 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Phone     string `gorm:"column:phone"`
 		Avatar    string `gorm:"column:avatar"`
 		Status    int    `gorm:"column:status"`
+		CreatedOn int64  `gorm:"column:created_on"`
 	}
 	var row pUser
 	err := s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ? AND is_del = 0", userID).First(&row).Error
@@ -974,6 +977,7 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Bio:           "",
 		Avatar:        row.Avatar,
 		Status:        row.Status,
+		CreatedAt:     time.Unix(row.CreatedOn, 0).Format("2006-01-02 15:04:05"),
 	}, nil
 }
 

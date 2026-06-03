@@ -43,6 +43,11 @@ JWT:
 AdminSettings:
   EncryptionKey: "CHANGE-ME-TO-A-LONG-RANDOM-SECRET"
 
+# 雪花算法ID生成配置
+Snowflake:
+  # 机器ID(0-1023)，分布式部署时每个节点需唯一，未配置则自动取hostname hash
+  WorkerID: 1
+
 # 限流配置
 RateLimit:
   # 是否启用限流：true/false

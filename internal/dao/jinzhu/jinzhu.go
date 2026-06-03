@@ -16,6 +16,7 @@ import (
 	"github.com/rocboss/paopao-ce/internal/core"
 	"github.com/rocboss/paopao-ce/internal/dao/cache"
 	"github.com/rocboss/paopao-ce/internal/dao/security"
+	"github.com/rocboss/paopao-ce/pkg/snowflake"
 )
 
 var _onceInitial sync.Once
@@ -115,5 +116,10 @@ func (s *webDataSrvA) Version() *semver.Version {
 func lazyInitial() {
 	_onceInitial.Do(func() {
 		initTableName()
+		workerID := int64(0)
+	if conf.SnowflakeSetting != nil {
+		workerID = conf.SnowflakeSetting.WorkerID
+	}
+	snowflake.Init(workerID)
 	})
 }

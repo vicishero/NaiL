@@ -61,6 +61,7 @@ var (
 	AdminSettingsSetting    *adminSettingsConf
 	WebProfileSetting       *WebProfileConf
 	RateLimitSetting        *RateLimitConf
+	SnowflakeSetting        *SnowflakeConf
 )
 
 func setupSetting(suite []string, noDefault bool) error {
@@ -125,6 +126,7 @@ func setupSetting(suite []string, noDefault bool) error {
 		"S3":                &S3Setting,
 		"WebProfile":        &WebProfileSetting,
 		"RateLimit":         &RateLimitSetting,
+		"Snowflake":         &SnowflakeSetting,
 	}
 	for k, v := range objects {
 		err := vp.UnmarshalKey(k, v)

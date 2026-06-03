@@ -9,6 +9,8 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/plugin/soft_delete"
+
+	"github.com/rocboss/paopao-ce/pkg/snowflake"
 )
 
 // Model 公共Model
@@ -27,7 +29,11 @@ type (
 
 func (m *Model) BeforeCreate(tx *gorm.DB) (err error) {
 	nowTime := time.Now().Unix()
-
+	// 雪花ID：应用层生成全局唯一int64主键，取代数据库自增
+	// 实体嵌入 *Model 指针可能为nil，通过 Dest 直接注入 ID
+	if m == nil || m.ID == 0 {
+		tx.Statement.SetColumn("id", snowflake.Next())
+	}
 	tx.Statement.SetColumn("created_on", nowTime)
 	tx.Statement.SetColumn("modified_on", nowTime)
 	return

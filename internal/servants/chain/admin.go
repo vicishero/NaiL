@@ -8,21 +8,37 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rocboss/paopao-ce/internal/core/ms"
 	"github.com/rocboss/paopao-ce/pkg/app"
+	"github.com/rocboss/paopao-ce/pkg/xerror"
 )
 
 func Admin() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if user, exist := c.Get("USER"); exist {
-			if userModel, ok := user.(*ms.User); ok {
-				if userModel.Status == ms.UserStatusNormal && userModel.IsAdmin {
-					c.Next()
-					return
-				}
-			}
+		user, exist := c.Get("USER")
+		if !exist {
+			response := app.NewResponse(c)
+			response.ToErrorResponse(xerror.Forbidden.WithDetails("需要管理员权限: USER不存在"))
+			c.Abort()
+			return
 		}
-
-		response := app.NewResponse(c)
-		response.ToErrorResponse(_errNoAdminPermission)
-		c.Abort()
+		userModel, ok := user.(*ms.User)
+		if !ok {
+			response := app.NewResponse(c)
+			response.ToErrorResponse(xerror.Forbidden.WithDetails("需要管理员权限: USER类型错误"))
+			c.Abort()
+			return
+		}
+		if userModel.Status != ms.UserStatusNormal {
+			response := app.NewResponse(c)
+			response.ToErrorResponse(xerror.Forbidden.WithDetails("需要管理员权限: 账户状态异常"))
+			c.Abort()
+			return
+		}
+		if !userModel.IsAdmin {
+			response := app.NewResponse(c)
+			response.ToErrorResponse(xerror.Forbidden.WithDetails("需要管理员权限: 非管理员账户"))
+			c.Abort()
+			return
+		}
+		c.Next()
 	}
 }

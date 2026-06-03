@@ -5,7 +5,6 @@
 package web
 
 import (
-	"context"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -64,39 +63,39 @@ func (s *adminSrv) SiteInfo(req *web.SiteInfoReq) (*web.SiteInfoResp, error) {
 	return res, nil
 }
 
-func (s *adminSrv) GetSiteSettings() (*web.SiteSettingsResp, error) {
-	profile, err := s.settings.GetProfile(context.Background())
-	if err != nil {
-		return nil, err
-	}
-	return &web.SiteSettingsResp{
-		SiteProfileResp: *profile,
-		ReadonlyFields:  sitesetting.CloneReadonlyFields(),
-	}, nil
-}
+// func (s *adminSrv) GetSiteSettings() (*web.SiteSettingsResp, error) {
+// 	profile, err := s.settings.GetProfile(context.Background())
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &web.SiteSettingsResp{
+// 		SiteProfileResp: *profile,
+// 		ReadonlyFields:  sitesetting.CloneReadonlyFields(),
+// 	}, nil
+// }
 
-func (s *adminSrv) UpdateSiteSettings(req *web.SiteSettingsReq) (*web.SiteSettingsResp, error) {
-	profile, err := s.settings.UpdateEditableProfile(context.Background(), sitesetting.EditableFromRequest(req))
-	if err != nil {
-		return nil, err
-	}
-	return &web.SiteSettingsResp{
-		SiteProfileResp: *profile,
-		ReadonlyFields:  sitesetting.CloneReadonlyFields(),
-	}, nil
-}
+// func (s *adminSrv) UpdateSiteSettings(req *web.SiteSettingsReq) (*web.SiteSettingsResp, error) {
+// 	profile, err := s.settings.UpdateEditableProfile(context.Background(), sitesetting.EditableFromRequest(req))
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	return &web.SiteSettingsResp{
+// 		SiteProfileResp: *profile,
+// 		ReadonlyFields:  sitesetting.CloneReadonlyFields(),
+// 	}, nil
+// }
 
-func (s *adminSrv) GetSettingsSchema() (*web.AdminSettingsSchemaResp, error) {
-	return s.settings.GetSchema()
-}
+// func (s *adminSrv) GetSettingsSchema() (*web.AdminSettingsSchemaResp, error) {
+// 	return s.settings.GetSchema()
+// }
 
-func (s *adminSrv) GetSettingsValues() (*web.AdminSettingsValuesResp, error) {
-	return s.settings.GetValues(context.Background())
-}
+// func (s *adminSrv) GetSettingsValues() (*web.AdminSettingsValuesResp, error) {
+// 	return s.settings.GetValues(context.Background())
+// }
 
-func (s *adminSrv) SaveSettings(req *web.AdminSettingsSaveReq) (*web.AdminSettingsSaveResp, error) {
-	return s.settings.SaveValues(context.Background(), req.Items)
-}
+// func (s *adminSrv) SaveSettings(req *web.AdminSettingsSaveReq) (*web.AdminSettingsSaveResp, error) {
+// 	return s.settings.SaveValues(context.Background(), req.Items)
+// }
 
 func newAdminSrv(s *base.DaoServant, wc core.WebCache, settings *sitesetting.Service) api.Admin {
 	return &adminSrv{

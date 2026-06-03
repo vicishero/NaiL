@@ -14,7 +14,7 @@
         <el-form-item label="状态">
           <el-select v-model="searchInfo.status" placeholder="全部" clearable style="width:100px">
             <el-option label="正常" :value="1" />
-            <el-option label="冻结" :value="0" />
+            <el-option label="冻结" :value="2" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -25,7 +25,7 @@
     </div>
     <div class="gva-table-box">
       <el-table :data="tableData" row-key="ID" :default-sort="{ prop: 'ID', order: 'descending' }">
-        <el-table-column align="left" label="ID" min-width="60" prop="ID" />
+        <el-table-column align="left" label="ID" min-width="160" prop="ID" />
         <el-table-column align="left" label="头像" min-width="75">
           <template #default="scope">
             <el-avatar v-if="scope.row.avatar" :src="scope.row.avatar" :size="40" />
@@ -83,7 +83,7 @@
         <el-form-item label="状态">
           <el-select v-model="form.status" style="width:100%">
             <el-option label="正常" :value="1" />
-            <el-option label="冻结" :value="0" />
+            <el-option label="冻结" :value="2" />
           </el-select>
         </el-form-item>
       </el-form>
