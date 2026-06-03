@@ -328,8 +328,8 @@ func (r *CreateTweetResp) Render(c *gin.Context) {
 }
 
 func (t TweetVisibleType) ToVisibleValue() (res cs.TweetVisibleType) {
-	// 原来的可见性: 0公开 1私密 2好友可见 3关注可见
-	//  现在的可见性: 0私密 10充电可见 20订阅可见 30保留 40保留 50好友可见 60关注可见 70保留 80保留 90公开
+	// 旧可见性: 0公开 1私密 2好友可见 3关注可见
+	// 新可见性: 0私密 10充电 20订阅 50好友 60关注 90公开
 	switch t {
 	case TweetVisitPublic:
 		res = cs.TweetVisitPublic
@@ -340,8 +340,12 @@ func (t TweetVisibleType) ToVisibleValue() (res cs.TweetVisibleType) {
 	case TweetVisitFollowing:
 		res = cs.TweetVisitFollowing
 	default:
-		// TODO: 默认私密
-		res = cs.TweetVisitPrivate
+		// 已使用新可见性值（>=10），直接透传
+		if t >= 10 {
+			res = cs.TweetVisibleType(t)
+		} else {
+			res = cs.TweetVisitPrivate
+		}
 	}
 	return
 }

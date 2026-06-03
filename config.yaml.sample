@@ -40,6 +40,12 @@ JWT:
   Issuer: paopao-api
   Expire: 86400
 
+# 日志文件配置（需在 Features.Default 中启用 LoggerFile）
+LoggerFile:
+  SavePath: logs
+  FileName: nail
+  FileExt: .log
+
 AdminSettings:
   EncryptionKey: "CHANGE-ME-TO-A-LONG-RANDOM-SECRET"
 

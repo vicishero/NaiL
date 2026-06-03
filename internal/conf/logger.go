@@ -13,16 +13,22 @@ import (
 	sentrylogrus "github.com/getsentry/sentry-go/logrus"
 	"github.com/sirupsen/logrus"
 	"go.opentelemetry.io/contrib/bridges/otellogrus"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func newFileLogger() io.Writer {
-	return &lumberjack.Logger{
-		Filename:  loggerFileSetting.SavePath + "/" + loggerFileSetting.FileName + loggerFileSetting.FileExt,
-		MaxSize:   600,
-		MaxAge:    10,
-		LocalTime: true,
+	path := loggerFileSetting.SavePath
+	if path == "" {
+		path = "logs"
 	}
+	name := loggerFileSetting.FileName
+	if name == "" {
+		name = "nail"
+	}
+	ext := loggerFileSetting.FileExt
+	if ext == "" {
+		ext = ".log"
+	}
+	return newDailyRotateWriter(path, name, ext, 500, 30)
 }
 
 func setupLogger() {
