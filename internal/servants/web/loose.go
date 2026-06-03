@@ -398,6 +398,13 @@ func (s *looseSrv) TopicList(req *web.TopicListReq) (*web.TopicListResp, error) 
 	if err != nil {
 		return nil, web.ErrGetPostTagsFailed
 	}
+	// 确保返回空数组而不是nil
+	if tags == nil {
+		tags = cs.TagList{}
+	}
+	if extralTags == nil {
+		extralTags = cs.TagList{}
+	}
 	return &web.TopicListResp{
 		Topics:       tags,
 		ExtralTopics: extralTags,

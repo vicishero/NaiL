@@ -56,4 +56,4 @@ LocalOSS:
   SavePath: custom/data/paopao-ce/oss
   Secure: false
   Bucket: paopao
-  Domain: 127.0.0.1:8008
+  Domain: 192.168.30.44:8008
