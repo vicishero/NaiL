@@ -23,7 +23,7 @@ BUILD_DATE := $(shell date +'%Y-%m-%d %H:%M:%S %Z')
 SHA_SHORT := $(shell git rev-parse --short HEAD)
 
 GOFMT ?= gofumpt -l -w
-MOD_NAME = github.com/rocboss/paopao-ce
+MOD_NAME = github.com/vicishero/NaiL
 LDFLAGS = -X "${MOD_NAME}/pkg/version.version=${BUILD_VERSION}" \
           -X "${MOD_NAME}/pkg/version.buildDate=${BUILD_DATE}" \
           -X "${MOD_NAME}/pkg/version.commitID=${SHA_SHORT}" \
