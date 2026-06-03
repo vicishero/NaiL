@@ -230,7 +230,7 @@ const onHandleFriendAction = (post: Item.PostProps) => {
   }
 };
 
-function postFollowAction(userId: number, isFollowing: boolean) {
+function postFollowAction(userId: string, isFollowing: boolean) {
   for (let index in list.value) {
     if (list.value[index].user_id == userId) {
       list.value[index].user.is_following = isFollowing;

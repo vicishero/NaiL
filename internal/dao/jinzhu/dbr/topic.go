@@ -31,8 +31,8 @@ type TopicUser struct {
 }
 
 type TagFormated struct {
-	ID          int64         `json:"id"`
-	UserID      int64         `json:"user_id"`
+	ID          int64         `json:"id,string"`
+	UserID      int64         `json:"user_id,string"`
 	User        *UserFormated `json:"user"`
 	Tag         string        `json:"tag"`
 	QuoteNum    int64         `json:"quote_num"`

@@ -24,11 +24,11 @@ type CommentReply struct {
 }
 
 type CommentReplyFormated struct {
-	ID            int64         `json:"id"`
-	CommentID     int64         `db:"comment_id" json:"comment_id"`
-	UserID        int64         `db:"user_id" json:"user_id"`
+	ID            int64         `json:"id,string"`
+	CommentID     int64         `db:"comment_id" json:"comment_id,string"`
+	UserID        int64         `db:"user_id" json:"user_id,string"`
 	User          *UserFormated `json:"user"`
-	AtUserID      int64         `db:"at_user_id" json:"at_user_id"`
+	AtUserID      int64         `db:"at_user_id" json:"at_user_id,string"`
 	AtUser        *UserFormated `json:"at_user"`
 	Content       string        `json:"content"`
 	IPLoc         string        `json:"ip_loc"`

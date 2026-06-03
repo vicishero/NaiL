@@ -15,7 +15,7 @@ import (
 
 // Model 公共Model
 type Model struct {
-	ID         int64                 `gorm:"primary_key" json:"id"`
+	ID         int64                 `gorm:"primary_key" json:"id,string"`
 	CreatedOn  int64                 `json:"created_on"`
 	ModifiedOn int64                 `json:"modified_on"`
 	DeletedOn  int64                 `json:"deleted_on"`

@@ -25,7 +25,7 @@
     </div>
     <div class="gva-table-box">
       <el-table :data="tableData" row-key="ID" :default-sort="{ prop: 'ID', order: 'descending' }">
-        <el-table-column align="left" label="ID" min-width="160" prop="ID" />
+        <el-table-column align="left" label="ID" min-width="170" prop="ID" />
         <el-table-column align="left" label="头像" min-width="75">
           <template #default="scope">
             <el-avatar v-if="scope.row.avatar" :src="scope.row.avatar" :size="40" />

@@ -34,19 +34,19 @@ type Message struct {
 }
 
 type MessageFormated struct {
-	ID             int64         `json:"id"`
-	SenderUserID   int64         `json:"sender_user_id"`
+	ID             int64         `json:"id,string"`
+	SenderUserID   int64         `json:"sender_user_id,string"`
 	SenderUser     *UserFormated `json:"sender_user"`
-	ReceiverUserID int64         `json:"receiver_user_id"`
+	ReceiverUserID int64         `json:"receiver_user_id,string"`
 	ReceiverUser   *UserFormated `json:"receiver_user,omitempty"`
 	Type           MessageT      `json:"type"`
 	Brief          string        `json:"brief"`
 	Content        string        `json:"content"`
-	PostID         int64         `json:"post_id"`
+	PostID         int64         `json:"post_id,string"`
 	Post           *PostFormated `json:"post"`
-	CommentID      int64         `json:"comment_id"`
+	CommentID      int64         `json:"comment_id,string"`
 	Comment        *Comment      `json:"comment"`
-	ReplyID        int64         `json:"reply_id"`
+	ReplyID        int64         `json:"reply_id,string"`
 	Reply          *CommentReply `json:"reply"`
 	IsRead         int8          `json:"is_read"`
 	CreatedOn      int64         `json:"created_on"`

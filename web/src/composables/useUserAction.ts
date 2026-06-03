@@ -11,7 +11,7 @@ export default class UserAction {
      * @param userName 目标用户名（用于提示）
      * @param isFollowing 当前是否已关注（用于确定操作类型和提示文案）
      */
-    static followAction(dialog: ReturnType<typeof useDialog>, userId: number, userName: string, isFollowing: boolean) {
+    static followAction(dialog: ReturnType<typeof useDialog>, userId: string, userName: string, isFollowing: boolean) {
         return new Promise<boolean>((resolve, reject) => {
             dialog.success({
                 title: '提示',

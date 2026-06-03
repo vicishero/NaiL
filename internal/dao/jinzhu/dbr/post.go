@@ -44,8 +44,8 @@ type Post struct {
 }
 
 type PostFormated struct {
-	ID              int64                  `json:"id"`
-	UserID          int64                  `json:"user_id"`
+	ID              int64                  `json:"id,string"`
+	UserID          int64                  `json:"user_id,string"`
 	User            *UserFormated          `json:"user"`
 	Contents        []*PostContentFormated `json:"contents"`
 	CommentCount    int64                  `json:"comment_count"`

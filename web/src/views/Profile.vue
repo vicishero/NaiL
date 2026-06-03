@@ -240,7 +240,7 @@ const whisperSuccess = () => {
   showWhisper.value = false;
 };
 
-function postFollowAction(userId: number, isFollowing: boolean) {
+function postFollowAction(userId: string, isFollowing: boolean) {
   updateFolloing(postList.value, userId, isFollowing);
   updateFolloing(commentList.value, userId, isFollowing);
   updateFolloing(highlightList.value, userId, isFollowing);
@@ -250,7 +250,7 @@ function postFollowAction(userId: number, isFollowing: boolean) {
 
 function updateFolloing(
   posts: Item.PostProps[],
-  userId: number,
+  userId: string,
   isFollowing: boolean,
 ) {
   if (posts && posts.length > 0) {

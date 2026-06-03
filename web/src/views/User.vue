@@ -235,7 +235,7 @@ const onSendWhisper = (receiver: Item.UserInfo) => {
 	showWhisper.value = true;
 };
 
-function postFollowAction(userId: number, isFollowing: boolean) {
+function postFollowAction(userId: string, isFollowing: boolean) {
 	updateFolloing(postList, userId, isFollowing);
 	updateFolloing(commentList, userId, isFollowing);
 	updateFolloing(highlightList, userId, isFollowing);
@@ -245,7 +245,7 @@ function postFollowAction(userId: number, isFollowing: boolean) {
 
 function updateFolloing(
 	posts: Ref<Item.PostProps[]>,
-	userId: number,
+	userId: string,
 	isFollowing: boolean,
 ) {
 	if (posts.value && posts.value.length > 0) {

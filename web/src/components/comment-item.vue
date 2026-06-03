@@ -152,7 +152,7 @@ const emit = defineEmits<{
 const props = withDefaults(
   defineProps<{
     comment: Item.CommentProps;
-    postUserId: number;
+    postUserId: string;
   }>(),
   {},
 );
@@ -176,7 +176,7 @@ const comment = computed(() => {
   return comment;
 });
 
-const doClickText = (e: MouseEvent, id: number | string) => {
+const doClickText = (e: MouseEvent, id: string) => {
   let _target = e.target as any;
   if (_target.dataset.detail) {
     const d = _target.dataset.detail.split(':');

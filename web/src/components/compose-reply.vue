@@ -76,7 +76,7 @@ import { storeToRefs } from 'pinia';
 const props = withDefaults(
   defineProps<{
     comment: Item.CommentProps;
-    atUserid: number;
+    atUserid: string;
     atUsername: string;
   }>(),
   {

@@ -104,7 +104,7 @@ import { storeToRefs } from 'pinia';
 
 const props = withDefaults(
   defineProps<{
-    tweetId: number;
+    tweetId: string;
     reply: Item.ReplyProps;
   }>(),
   {},

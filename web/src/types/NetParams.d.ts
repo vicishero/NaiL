@@ -17,7 +17,7 @@ declare namespace NetParams {
   }
 
   interface PostGetPost {
-    id: number;
+    id: string;
   }
 
   interface PostGetPosts {
@@ -29,37 +29,37 @@ declare namespace NetParams {
   }
 
   interface PostLockPost {
-    id: number;
+    id: string;
   }
 
   interface PostStickPost {
-    id: number;
+    id: string;
   }
 
   interface PostHighlightPost {
-    id: number;
+    id: string;
   }
 
   interface PostVisibilityPost {
-    id: number;
+    id: string;
     /** 可见性：0为公开，1为私密，2为好友可见 */
     visibility: import('@/utils/IEnum').VisibilityEnum;
   }
 
   interface PostGetPostStar {
-    id: number;
+    id: string;
   }
 
   interface PostPostStar {
-    id: number;
+    id: string;
   }
 
   interface PostGetPostCollection {
-    id: number;
+    id: string;
   }
 
   interface PostPostCollection {
-    id: number;
+    id: string;
   }
 
   interface PostGetTags {
@@ -69,7 +69,7 @@ declare namespace NetParams {
   }
 
   interface PostGetPostComments {
-    id: number;
+    id: string;
     style: 'default' | 'hots' | 'newest';
     page?: number;
     page_size?: number;
@@ -89,23 +89,23 @@ declare namespace NetParams {
   }
 
   interface PostDeletePost {
-    id: number;
+    id: string;
   }
 
   interface PostTweetCommentThumbs {
-    tweet_id: number;
-    comment_id: number;
+    tweet_id: string;
+    comment_id: string;
   }
 
   interface PostTweetReplyThumbs {
-    tweet_id: number;
-    comment_id: number;
-    reply_id: number;
+    tweet_id: string;
+    comment_id: string;
+    reply_id: string;
   }
 
   interface PostCreateComment {
     /** 内容ID */
-    post_id: number;
+    post_id: string;
     /** 帖子内容列表 */
     contents: Partial<Item.CommentItemProps>[];
     /** 艾特用户列表 */
@@ -113,39 +113,39 @@ declare namespace NetParams {
   }
 
   interface PostDeleteComment {
-    id: number;
+    id: string;
   }
 
   interface PostHighlightComment {
-    id: number;
+    id: string;
   }
 
   interface PostCreateCommentReply {
     /** 艾特的用户UID */
-    at_user_id: number;
+    at_user_id: string;
     /** 回复的评论ID */
-    comment_id: number;
+    comment_id: string;
     /** 回复内容 */
     content: string;
   }
 
   interface PostDeleteCommentReply {
-    id: number;
+    id: string;
   }
 
   interface PostStickTopic {
-    topic_id: number;
+    topic_id: string;
   }
 
   interface PostPinTopic {
-    topic_id: number;
+    topic_id: string;
   }
 
   interface PostFollowTopic {
-    topic_id: number;
+    topic_id: string;
   }
 
   interface PostUnfollowTopic {
-    topic_id: number;
+    topic_id: string;
   }
 }

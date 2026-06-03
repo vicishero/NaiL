@@ -184,7 +184,7 @@ const emit = defineEmits<{
 const props = withDefaults(
   defineProps<{
     lock: number;
-    postId: number;
+    postId: string;
   }>(),
   {
     lock: 0,

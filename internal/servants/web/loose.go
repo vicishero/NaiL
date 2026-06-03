@@ -508,14 +508,17 @@ func (s *looseSrv) TweetComments(req *web.TweetCommentsReq) (res *web.TweetComme
 func (s *looseSrv) TweetDetail(req *web.TweetDetailReq) (*web.TweetDetailResp, error) {
 	post, err := s.Ds.GetPostByID(req.TweetId)
 	if err != nil {
+		logrus.Errorf("TweetDetail GetPostByID(%d) err: %v", req.TweetId, err)
 		return nil, web.ErrGetPostFailed
 	}
 	postContents, err := s.Ds.GetPostContentsByIDs([]int64{post.ID})
 	if err != nil {
+		logrus.Errorf("TweetDetail GetPostContentsByIDs(postID=%d) err: %v", post.ID, err)
 		return nil, web.ErrGetPostFailed
 	}
 	users, err := s.Ds.GetUsersByIDs([]int64{post.UserID})
 	if err != nil {
+		logrus.Errorf("TweetDetail GetUsersByIDs(userID=%d) err: %v", post.UserID, err)
 		return nil, web.ErrGetPostFailed
 	}
 	// 数据整合
@@ -529,13 +532,16 @@ func (s *looseSrv) TweetDetail(req *web.TweetDetailReq) (*web.TweetDetailResp, e
 		}
 	}
 	if err = s.PrepareTweet(req.User, postFormated); err != nil {
+		logrus.Errorf("TweetDetail PrepareTweet(postID=%d) err: %v", post.ID, err)
 		return nil, web.ErrGetPostFailed
 	}
 	// 检测访问权限
-	// TODO: 提到最前面去检测
+	viewerID := int64(0)
+	if req.User != nil {
+		viewerID = req.User.ID
+	}
 	switch {
 	case req.User != nil && (req.User.ID == postFormated.User.ID || req.User.IsAdmin):
-		// read by self of super admin
 		break
 	case post.Visibility == core.PostVisitPublic:
 		break
@@ -544,6 +550,8 @@ func (s *looseSrv) TweetDetail(req *web.TweetDetailReq) (*web.TweetDetailResp, e
 	case post.Visibility == core.PostVisitFollowing && postFormated.User.IsFollowing:
 		break
 	default:
+		logrus.Warnf("TweetDetail permission denied: postID=%d visibility=%d viewerID=%d ownerID=%d isAdmin=%v",
+			post.ID, post.Visibility, viewerID, postFormated.User.ID, req.User != nil && req.User.IsAdmin)
 		return nil, web.ErrNoPermission
 	}
 	return (*web.TweetDetailResp)(postFormated), nil

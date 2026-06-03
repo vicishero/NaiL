@@ -22,7 +22,7 @@ type H5UserListResp struct {
 
 // H5UserItem 运维用户列表项
 type H5UserItem struct {
-	ID             int64  `json:"ID"`
+	ID             int64  `json:"ID,string"`
 	Nickname       string `json:"nickname"`
 	Username       string `json:"username"`
 	Phone          string `json:"phone"`

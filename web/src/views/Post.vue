@@ -69,7 +69,7 @@ const post = ref<Item.PostProps>({} as Item.PostProps);
 const loading = ref(false);
 const commentLoading = ref(false);
 const comments = ref<Item.CommentProps[]>([]);
-const postId = computed(() => +(route.query.id as string));
+const postId = computed(() => (route.query.id as string) || '');
 const sortStrategy = ref<'default' | 'hots' | 'newest'>('default');
 const defaultCommentsSort = ref<boolean>(true);
 const pageSize = 20;
@@ -97,7 +97,7 @@ const commentTab = (tab: 'default' | 'hots' | 'newest') => {
   loadComments(stateHandler);
 };
 
-const reloadPost = (post_id: number) => {
+const reloadPost = (post_id: string) => {
   getPost({
     id: post_id,
   })
@@ -135,7 +135,7 @@ const loadDefaultComments = ($state: any) => {
     return;
   }
   getPostComments({
-    id: post.value.id as number,
+    id: post.value.id,
     style: 'default',
     page: defaultCommmentsPage,
     page_size: pageSize,
@@ -174,7 +174,7 @@ const loadHotsComments = ($state: any) => {
     return;
   }
   getPostComments({
-    id: post.value.id as number,
+    id: post.value.id,
     style: 'hots',
     page: hotsCommmentsPage,
     page_size: pageSize,
@@ -213,7 +213,7 @@ const loadNewestComments = ($state: any) => {
     return;
   }
   getPostComments({
-    id: post.value.id as number,
+    id: post.value.id,
     style: 'newest',
     page: newestCommmentsPage,
     page_size: pageSize,

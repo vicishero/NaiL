@@ -24,9 +24,9 @@ type Comment struct {
 }
 
 type CommentFormated struct {
-	ID            int64                   `json:"id"`
-	PostID        int64                   `json:"post_id"`
-	UserID        int64                   `json:"user_id"`
+	ID            int64                   `json:"id,string"`
+	PostID        int64                   `json:"post_id,string"`
+	UserID        int64                   `json:"user_id,string"`
 	User          *UserFormated           `json:"user"`
 	Contents      []*CommentContent       `json:"contents"`
 	Replies       []*CommentReplyFormated `json:"replies"`

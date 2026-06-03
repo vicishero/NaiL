@@ -312,7 +312,7 @@ const whisperSuccess = () => {
 };
 
 const emit = defineEmits<{
-  (e: 'reload', post_id: number): void;
+  (e: 'reload', post_id: string): void;
 }>();
 
 // 使用 usePostContent composable (包含额外字段)
@@ -459,7 +459,7 @@ const onHandleFollowAction = (post: Item.PostProps) => {
 		})
 };
 
-const goPostDetail = (id: number) => {
+const goPostDetail = (id: string) => {
   router.push({
     name: 'post',
     query: {
@@ -467,7 +467,7 @@ const goPostDetail = (id: number) => {
     },
   });
 };
-const doClickText = (e: MouseEvent, id: number) => {
+const doClickText = (e: MouseEvent, id: string) => {
   if ((e.target as any).dataset.detail) {
     const d = (e.target as any).dataset.detail.split(':');
     if (d.length === 2) {

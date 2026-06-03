@@ -192,7 +192,7 @@ const emit = defineEmits<{
   (e: 'send-whisper', user: Item.UserInfo): void;
   (e: 'handle-follow-action', user: Item.PostProps): void;
   (e: 'handle-friend-action', user: Item.PostProps): void;
-  (e: 'post-follow-action', user_id: number, is_following: boolean): void;
+  (e: 'post-follow-action', user_id: string, is_following: boolean): void;
 }>();
 
 const renderIcon = (icon: Component) => {
@@ -334,7 +334,7 @@ const handlePostCollection = () => {
       console.log(err);
     });
 };
-const goPostDetail = (id: number) => {
+const goPostDetail = (id: string) => {
   router.push({
     name: 'post',
     query: {
@@ -342,7 +342,7 @@ const goPostDetail = (id: number) => {
     },
   });
 };
-const doClickText = (e: MouseEvent, id: number) => {
+const doClickText = (e: MouseEvent, id: string) => {
   const detail = (e.target as any).dataset.detail;
   if (detail && detail !== 'post') {
     const d = detail.split(':');
