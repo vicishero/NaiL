@@ -39,6 +39,7 @@ type Admin interface {
 	GetSettingsValues() (*web.AdminSettingsValuesResp, error)
 	SaveSettings(*web.AdminSettingsSaveReq) (*web.AdminSettingsSaveResp, error)
 	ChangeUserStatus(*web.ChangeUserStatusReq) error
+	SyncSearchIndex(*web.SyncSearchIndexReq) error
 
 	mustEmbedUnimplementedAdminServant()
 }
@@ -136,6 +137,19 @@ func RegisterAdminServant(e *gin.Engine, s Admin) {
 		}
 		s.Render(c, nil, s.ChangeUserStatus(req))
 	})
+	router.Handle("GET", "admin/sync/index", func(c *gin.Context) {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+		}
+		req := new(web.SyncSearchIndexReq)
+		if err := s.Bind(c, req); err != nil {
+			s.Render(c, nil, err)
+			return
+		}
+		s.Render(c, nil, s.SyncSearchIndex(req))
+	})
 }
 
 // UnimplementedAdminServant can be embedded to have forward compatible implementations.
@@ -170,6 +184,10 @@ func (UnimplementedAdminServant) SaveSettings(req *web.AdminSettingsSaveReq) (*w
 }
 
 func (UnimplementedAdminServant) ChangeUserStatus(req *web.ChangeUserStatusReq) error {
+	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
+}
+
+func (UnimplementedAdminServant) SyncSearchIndex(req *web.SyncSearchIndexReq) error {
 	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 

@@ -17,6 +17,7 @@
         <el-form-item>
           <el-button type="primary" icon="search" @click="onSearch">查询</el-button>
           <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button icon="connection" @click="onSyncIndex" :loading="syncing">同步索引</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -107,7 +108,7 @@
 </template>
 
 <script setup>
-import { getH5PostList, getH5Post, updateH5Post, deleteH5Post } from '@/api/h5Admin'
+import { getH5PostList, getH5Post, updateH5Post, deleteH5Post, syncH5Index } from '@/api/h5Admin'
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/format'
@@ -116,7 +117,7 @@ defineOptions({ name: 'h5Posts' })
 
 const page = ref(1), total = ref(0), pageSize = ref(10), tableData = ref([])
 const searchInfo = reactive({ keyword: '', userId: '', visibility: undefined })
-const drawerVisible = ref(false), currentPost = ref(null)
+const drawerVisible = ref(false), currentPost = ref(null), syncing = ref(false)
 const form = ref({ ID: 0, visibility: 90, isTop: false, isEssence: false, isLock: false })
 
 const getTableData = async () => {
@@ -131,6 +132,7 @@ getTableData()
 
 const onSearch = () => { page.value = 1; getTableData() }
 const onReset = () => { searchInfo.keyword = ''; searchInfo.userId = ''; searchInfo.visibility = undefined; page.value = 1; getTableData() }
+const onSyncIndex = async () => { syncing.value = true; try { await syncH5Index(); ElMessage.success('索引同步已启动'); } catch { ElMessage.error('同步失败'); } finally { syncing.value = false } }
 const handleSizeChange = (v) => { pageSize.value = v; getTableData() }
 const handleCurrentChange = (v) => { page.value = v; getTableData() }
 

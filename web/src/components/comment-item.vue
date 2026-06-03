@@ -165,7 +165,7 @@ const comment = computed(() => {
     },
     props.comment,
   );
-  comment.contents.map((content: any) => {
+  (comment.contents || []).map((content: any) => {
     if (+content.type === 1 || +content.type === 2) {
       comment.texts.push(content);
     }

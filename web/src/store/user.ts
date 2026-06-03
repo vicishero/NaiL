@@ -6,7 +6,7 @@ export const TOKEN_KEY = 'PAOPAO_TOKEN';
 
 export const useStoreUser = defineStore('user', () => {
     const userInfo = ref<Record<string, any>>({
-        id: 0,
+        id: '0',
         username: '',
         nickname: '',
         created_on: 0,
@@ -16,7 +16,7 @@ export const useStoreUser = defineStore('user', () => {
         is_admin: false,
     });
 
-    const userLogined = computed(() => userInfo.value.id > 0);
+    const userLogined = computed(() => userInfo.value.id != '0');
 
     function updateUserinfo(data: Record<string, any>) {
         userInfo.value = data;
@@ -25,7 +25,7 @@ export const useStoreUser = defineStore('user', () => {
     function userLogout() {
         localStorage.removeItem(TOKEN_KEY);
         userInfo.value = {
-            id: 0,
+            id: '0',
             nickname: '',
             username: '',
             created_on: 0,

@@ -10,9 +10,6 @@ import (
 type Core struct {
 	Schema `mir:"v1,chain"`
 
-	// SyncSearchIndex 同步索引
-	SyncSearchIndex func(Get, web.SyncSearchIndexReq) `mir:"sync/index"`
-
 	// GetUserInfo 获取当前用户信息
 	GetUserInfo func(Get, web.UserInfoReq) web.UserInfoResp `mir:"user/info"`
 

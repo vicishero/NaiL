@@ -703,7 +703,7 @@ const handleNicknameShow = () => {
   }, 30);
 };
 onMounted(() => {
-  if (userInfo.value.id === 0) {
+  if (userInfo.value.id == '0') {
     storeMain.triggerAuth(true);
     storeMain.triggerAuthKey('signin');
   }

@@ -19,6 +19,7 @@ import (
 	"github.com/rocboss/paopao-ce/internal/core/admin"
 	"github.com/rocboss/paopao-ce/internal/dao/admin/dbr"
 	"github.com/rocboss/paopao-ce/internal/dao/cache"
+	"github.com/rocboss/paopao-ce/internal/servants/base"
 	"github.com/rocboss/paopao-ce/internal/servants/web/assets"
 	"github.com/rocboss/paopao-ce/pkg/app"
 	"github.com/rocboss/paopao-ce/pkg/utils"
@@ -27,12 +28,14 @@ import (
 )
 
 type AuthServant struct {
-	service admin.AdminService
+	service     admin.AdminService
+	daoServant  *base.DaoServant
 }
 
-func NewAuthServant(service admin.AdminService) *AuthServant {
+func NewAuthServant(service admin.AdminService, daoServant *base.DaoServant) *AuthServant {
 	return &AuthServant{
-		service: service,
+		service:    service,
+		daoServant: daoServant,
 	}
 }
 

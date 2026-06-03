@@ -33,7 +33,6 @@ type Core interface {
 	ReadMessage(*web.ReadMessageReq) error
 	GetMessages(*web.GetMessagesReq) (*web.GetMessagesResp, error)
 	GetUserInfo(*web.UserInfoReq) (*web.UserInfoResp, error)
-	SyncSearchIndex(*web.SyncSearchIndexReq) error
 
 	mustEmbedUnimplementedCoreServant()
 }
@@ -261,19 +260,6 @@ func RegisterCoreServant(e *gin.Engine, s Core) {
 		resp, err := s.GetUserInfo(req)
 		s.Render(c, resp, err)
 	})
-	router.Handle("GET", "sync/index", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-		req := new(web.SyncSearchIndexReq)
-		if err := s.Bind(c, req); err != nil {
-			s.Render(c, nil, err)
-			return
-		}
-		s.Render(c, nil, s.SyncSearchIndex(req))
-	})
 }
 
 // UnimplementedCoreServant can be embedded to have forward compatible implementations.
@@ -341,10 +327,6 @@ func (UnimplementedCoreServant) GetMessages(req *web.GetMessagesReq) (*web.GetMe
 
 func (UnimplementedCoreServant) GetUserInfo(req *web.UserInfoReq) (*web.UserInfoResp, error) {
 	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func (UnimplementedCoreServant) SyncSearchIndex(req *web.SyncSearchIndexReq) error {
-	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
 func (UnimplementedCoreServant) mustEmbedUnimplementedCoreServant() {}

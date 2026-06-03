@@ -42,15 +42,6 @@ func (s *coreSrv) Chain() gin.HandlersChain {
 	return gin.HandlersChain{chain.JWT()}
 }
 
-func (s *coreSrv) SyncSearchIndex(req *web.SyncSearchIndexReq) error {
-	if req.User != nil && req.User.IsAdmin {
-		s.PushAllPostToSearch()
-	} else {
-		logrus.Warnf("sync search index need admin permision user: %#v", req.User)
-	}
-	return nil
-}
-
 func (s *coreSrv) GetUserInfo(req *web.UserInfoReq) (*web.UserInfoResp, error) {
 	user, err := s.Ds.UserProfileByName(req.Username)
 	if err != nil {

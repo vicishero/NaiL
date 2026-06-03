@@ -1,7 +1,7 @@
 declare namespace Item {
   interface UserInfo {
     /** 用户UID */
-    id: number;
+    id: string;
     /** 用户名 */
     username: string;
     /** 用户昵称 */
@@ -35,11 +35,11 @@ declare namespace Item {
   /** 评论内容 */
   interface CommentItemProps {
     /** 内容ID */
-    id: number;
+    id: string;
     /** 评论ID */
-    comment_id: number;
+    comment_id: string;
     /** 评论者UID */
-    user_id: number;
+    user_id: string;
     /** 类别：1为标题，2为文字段落，3为图片地址，4为视频地址，5为语音地址，6为链接地址 */
     type: import('@/utils/IEnum').CommentItemTypeEnum;
     /** 内容 */
@@ -58,10 +58,10 @@ declare namespace Item {
 
   /** 评论数据 */
   interface CommentProps {
-    id: number;
-    post_id: number;
+    id: string;
+    post_id: string;
     /** 评论者UID */
-    user_id: number;
+    user_id: string;
     /** 评论者用户信息 */
     user: UserInfo;
     /** 评论内容 */
@@ -100,15 +100,15 @@ declare namespace Item {
   /** 回复内容 */
   interface ReplyProps {
     /** 内容ID */
-    id: number;
+    id: string;
     /** 评论ID */
-    comment_id: number;
+    comment_id: string;
     /** 回复人ID */
-    user_id: number;
+    user_id: string;
     /** 回复人用户数据 */
     user: UserInfo;
     /** 艾特人ID */
-    at_user_id: number;
+    at_user_id: string;
     /** 艾特人用户数据 */
     at_user: UserInfo;
     /** 内容 */
@@ -135,7 +135,7 @@ declare namespace Item {
 
   /** 联系人数据 */
   interface ContactItemProps {
-    user_id: number;
+    user_id: string;
     username: string;
     nickname: string;
     avatar: string;
@@ -163,17 +163,17 @@ declare namespace Item {
   /** 帖子内容 */
   interface PostItemProps {
     /** 内容ID */
-    id: number;
+    id: string;
     /** 类型：1为标题，2为文字段落，3为图片地址，4为视频地址，5为语音地址，6为链接地址，7为附件资源，8为收费资源 */
     type: import('@/utils/IEnum').PostItemTypeEnum;
     /** POST ID */
-    post_id: number;
+    post_id: string;
     /** 内容 */
     content: string;
     /** 排序，越小越靠前 */
     sort: number;
     /** 用户UID */
-    user_id?: number;
+    user_id?: string;
     /** 创建时间 */
     created_on: number;
     /** 修改时间 */
@@ -186,9 +186,9 @@ declare namespace Item {
 
   /** 帖子 */
   interface PostProps {
-    id: number;
+    id: string;
     /** 发帖人UID */
-    user_id: number;
+    user_id: string;
     /** 发帖人用户数据 */
     user: UserInfo;
     /** 附件价格（分） */
@@ -246,7 +246,7 @@ declare namespace Item {
   }
 
   interface MessageProps {
-    id: number;
+    id: string;
     /** 类型：1为动态，2为评论，3为回复，4为私信，5为好友申请， 99为系统通知 */
     type: import('@/utils/IEnum').MessageTypeEnum;
     /** 摘要说明 */
@@ -256,23 +256,23 @@ declare namespace Item {
     /** 是否已读：0为未读，1为已读 */
     is_read: 0 | 1;
     /** 发送人UID */
-    sender_user_id: number;
+    sender_user_id: string;
     /** 发送人用户数据 */
     sender_user: UserInfo;
     /** 接收方UID */
-    receiver_user_id: number;
+    receiver_user_id: string;
     /** 接收人用户数据 */
     receiver_user: UserInfo;
     /** 帖子ID */
-    post_id: number;
+    post_id: string;
     /** 帖子内容 */
     post: PostProps;
     /** 评论ID */
-    comment_id: number;
+    comment_id: string;
     /** 评论内容 */
     comment: CommentProps;
     /** 回复ID */
-    reply_id: number;
+    reply_id: string;
     /** 回复内容 */
     replay: ReplyProps;
     /** 创建时间 */
@@ -286,25 +286,25 @@ declare namespace Item {
   }
 
   interface ContactsItemProps {
-    user_id: number;
+    user_id: string;
     name: string;
     nickname: string;
     avatar: string;
   }
 
   interface FollowItemProps {
-    user_id: number;
+    user_id: string;
     name: string;
     nickname: string;
     avatar: string;
   }
 
   interface AttachmentProps {
-    id: number;
+    id: string;
     /** 类别：1为图片，2为视频，3为其他附件 */
     type: import('@/utils/IEnum').AttachmentTypeEnum;
     /** 发布者用户UID */
-    user_id: number;
+    user_id: string;
     /** 发布者用户数据 */
     user: UserInfo;
     /** 文件大小 */
@@ -326,9 +326,9 @@ declare namespace Item {
   }
 
   interface TagProps {
-    id: number;
+    id: string;
     /** 创建者UID */
-    user_id: number;
+    user_id: string;
     /** 创建者用户数据 */
     user: UserInfo;
     /** 标签名 */
@@ -361,7 +361,7 @@ declare namespace Item {
   }
 
   interface BillProps {
-    id: number;
+    id: string;
     reason: string;
     change_amount: number;
     created_on: number;

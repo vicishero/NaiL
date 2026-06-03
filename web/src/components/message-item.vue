@@ -262,7 +262,7 @@ const isWhisperSender = computed(() => {
 const viewDetail = (message: Item.MessageProps) => {
   handleReadMessage(message);
   if (message.type === 1 || message.type === 2 || message.type === 3) {
-    if (message.post && message.post.id > 0) {
+    if (message.post && message.post.id != '0') {
       router.push({
         name: 'post',
         query: {

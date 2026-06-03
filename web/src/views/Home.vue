@@ -310,7 +310,7 @@ const loadContacts = () => {
   if (
     !profile.value.useFriendship ||
     !profile.value.enableTrendsBar ||
-    userInfo.value.id === 0
+    userInfo.value.id == '0'
   ) {
     return;
   }

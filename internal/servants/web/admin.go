@@ -31,6 +31,11 @@ func (s *adminSrv) Chain() gin.HandlersChain {
 	return gin.HandlersChain{chain.JWT(), chain.Admin()}
 }
 
+func (s *adminSrv) SyncSearchIndex(req *web.SyncSearchIndexReq) error {
+	s.PushAllPostToSearch()
+	return nil
+}
+
 func (s *adminSrv) ChangeUserStatus(req *web.ChangeUserStatusReq) error {
 	user, err := s.Ds.GetUserByID(req.ID)
 	if err != nil || user.Model == nil || user.ID <= 0 {

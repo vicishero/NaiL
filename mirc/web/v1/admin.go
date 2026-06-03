@@ -13,6 +13,8 @@ type Admin struct {
 	// ChangeUserStatus 管理·禁言/解封用户
 	ChangeUserStatus func(Post, web.ChangeUserStatusReq)         `mir:"admin/user/status"`
 	SiteInfo         func(Get, web.SiteInfoReq) web.SiteInfoResp `mir:"admin/site/status"`
+	// SyncSearchIndex 同步搜索索引
+	SyncSearchIndex func(Get, web.SyncSearchIndexReq) `mir:"admin/sync/index"`
 	// GetSiteSettings    func(Get) web.SiteSettingsResp                                 `mir:"admin/site/profile"`
 	// UpdateSiteSettings func(Post, web.SiteSettingsReq) web.SiteSettingsResp           `mir:"admin/site/profile"`
 	// GetSettingsSchema  func(Get) web.AdminSettingsSchemaResp                          `mir:"admin/settings/schema"`

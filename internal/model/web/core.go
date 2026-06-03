@@ -20,10 +20,6 @@ type ChangeAvatarReq struct {
 	Avatar   string `json:"avatar" form:"avatar" binding:"required"`
 }
 
-type SyncSearchIndexReq struct {
-	BaseInfo `json:"-" binding:"-"`
-}
-
 type UserInfoReq struct {
 	BaseInfo `json:"-" binding:"-"`
 	Username string `json:"username" form:"username" binding:"required"`

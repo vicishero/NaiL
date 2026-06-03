@@ -4,6 +4,10 @@
 
 package web
 
+type SyncSearchIndexReq struct {
+	BaseInfo `json:"-" binding:"-"`
+}
+
 type ChangeUserStatusReq struct {
 	BaseInfo `json:"-" binding:"-"`
 	ID       int64 `json:"id" form:"id" binding:"required"`

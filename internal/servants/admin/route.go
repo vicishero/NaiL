@@ -9,6 +9,7 @@ import (
 	"github.com/rocboss/paopao-ce/internal/conf"
 	adminDao "github.com/rocboss/paopao-ce/internal/dao/admin"
 	adminService "github.com/rocboss/paopao-ce/internal/service/admin"
+	"github.com/rocboss/paopao-ce/internal/servants/base"
 )
 
 // RegisterAdminRoutes 注册管理后台路由
@@ -17,7 +18,7 @@ func RegisterAdminRoutes(e *gin.Engine, basePath string) {
 	db := conf.MustGormDB()
 	aDao := adminDao.NewAdminDao(db)
 	aService := adminService.NewAdminService(aDao)
-	s := NewAuthServant(aService)
+	s := NewAuthServant(aService, base.NewDaoServant())
 
 	adminGroup := e.Group(basePath)
 
@@ -351,6 +352,7 @@ func registerGvaPermissionRoutes(g *gin.RouterGroup, s *AuthServant) {
 		h5Group.GET("/post", GvaEmptyObject)
 		h5Group.PUT("/post", GvaSuccess)
 		h5Group.DELETE("/post", GvaSuccess)
+		h5Group.POST("/syncIndex", s.SyncSearchIndex)
 		h5Group.GET("/tagList", GvaEmptyList)
 		h5Group.GET("/tag", GvaEmptyObject)
 		h5Group.PUT("/tag", GvaSuccess)

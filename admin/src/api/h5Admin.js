@@ -11,6 +11,7 @@ export const getH5PostList = (params) => service({ url: '/h5Admin/postList', met
 export const getH5Post = (params) => service({ url: '/h5Admin/post', method: 'get', params })
 export const updateH5Post = (data) => service({ url: '/h5Admin/post', method: 'put', data })
 export const deleteH5Post = (data) => service({ url: '/h5Admin/post', method: 'delete', data })
+export const syncH5Index = () => service({ url: '/h5Admin/syncIndex', method: 'post' })
 
 // --- H5 Comment Management ---
 export const getH5CommentList = (params) => service({ url: '/h5Admin/commentList', method: 'get', params })
