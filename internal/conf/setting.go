@@ -297,6 +297,22 @@ type jwtConf struct {
 	Expire time.Duration
 }
 
+// RateLimitRule 限流规则配置
+type RateLimitRule struct {
+	Key       string        `mapstructure:"key"`       // 规则键（路径、用户ID等）
+	Limit     int           `mapstructure:"limit"`     // 限流阈值（请求数）
+	Duration  time.Duration `mapstructure:"duration"`  // 时间窗口
+	Dimension string        `mapstructure:"dimension"` // 限流维度：ip、user、path、ip+path、user+path
+}
+
+// RateLimitConf 限流配置
+type RateLimitConf struct {
+	Enable      bool            `mapstructure:"enable"`       // 是否启用限流
+	DefaultLimit int             `mapstructure:"default_limit"`// 默认限流阈值
+	DefaultDur  time.Duration   `mapstructure:"default_dur"`  // 默认时间窗口
+	Rules       []RateLimitRule `mapstructure:"rules"`        // 自定义规则
+}
+
 type WebProfileConf struct {
 	UseFriendship             bool   `json:"use_friendship"`
 	EnableTrendsBar           bool   `json:"enable_trends_bar"`

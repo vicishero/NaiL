@@ -6,6 +6,7 @@ package core
 
 import (
 	"context"
+	"time"
 
 	"github.com/rocboss/paopao-ce/internal/core/cs"
 	"github.com/rocboss/paopao-ce/internal/core/ms"
@@ -96,6 +97,7 @@ type RedisCache interface {
 	IncrCountWhisper(ctx context.Context, uid int64) error
 	SetRechargeStatus(ctx context.Context, tradeNo string) error
 	DelRechargeStatus(ctx context.Context, tradeNo string) error
+	RateLimitAcquire(ctx context.Context, key string, limit int, duration time.Duration) (bool, int, error)
 }
 
 type AppCache interface {

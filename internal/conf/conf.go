@@ -60,6 +60,7 @@ var (
 	JWTSetting              *jwtConf
 	AdminSettingsSetting    *adminSettingsConf
 	WebProfileSetting       *WebProfileConf
+	RateLimitSetting        *RateLimitConf
 )
 
 func setupSetting(suite []string, noDefault bool) error {
@@ -123,6 +124,7 @@ func setupSetting(suite []string, noDefault bool) error {
 		"LocalOSS":          &LocalOSSSetting,
 		"S3":                &S3Setting,
 		"WebProfile":        &WebProfileSetting,
+		"RateLimit":         &RateLimitSetting,
 	}
 	for k, v := range objects {
 		err := vp.UnmarshalKey(k, v)

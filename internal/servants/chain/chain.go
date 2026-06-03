@@ -15,6 +15,7 @@ import (
 var (
 	_ums     core.UserManageService
 	_ac      core.AppCache
+	_rc      core.RedisCache
 	_onceUms sync.Once
 )
 
@@ -22,6 +23,19 @@ func userManageService() core.UserManageService {
 	_onceUms.Do(func() {
 		_ums = dao.DataService()
 		_ac = cache.NewAppCache()
+		_rc = cache.NewRedisCache()
 	})
 	return _ums
+}
+
+// appCache 获取AppCache实例
+func appCache() core.AppCache {
+	userManageService()
+	return _ac
+}
+
+// redisCache 获取RedisCache实例
+func redisCache() core.RedisCache {
+	userManageService()
+	return _rc
 }

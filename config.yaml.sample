@@ -43,6 +43,46 @@ JWT:
 AdminSettings:
   EncryptionKey: "CHANGE-ME-TO-A-LONG-RANDOM-SECRET"
 
+# 限流配置
+RateLimit:
+  # 是否启用限流：true/false
+  Enable: true
+  # 默认限流阈值：每个时间窗口允许的请求数
+  DefaultLimit: 100
+  # 默认时间窗口：单位秒
+  DefaultDur: 60
+  # 自定义限流规则（可配置多条）
+  Rules:
+    # 示例：登录接口限流：IP维度，5分钟10次（防止暴力破解）
+    - Key: "/v1/account/login"
+      Limit: 10
+      Duration: 300
+      Dimension: "ip"
+
+    # 示例：短信发送接口限流：IP维度，1分钟5次（防止短信轰炸）
+    - Key: "/v1/account/send_sms"
+      Limit: 5
+      Duration: 60
+      Dimension: "ip"
+
+    # 示例：发帖接口限流：用户维度，1分钟5次（防止垃圾内容）
+    - Key: "/v1/post/create"
+      Limit: 5
+      Duration: 60
+      Dimension: "user"
+
+    # 示例：评论接口限流：用户维度，1分钟20次
+    - Key: "/v1/post/comment"
+      Limit: 20
+      Duration: 60
+      Dimension: "user"
+
+    # 示例：所有v1接口限流：IP+路径维度，1分钟60次（全局基础保护）
+    - Key: "/v1/*"
+      Limit: 60
+      Duration: 60
+      Dimension: "ip+path"
+
 # Optional first-boot overrides for the providers enabled in Features.Default.
 # If the embedded defaults already match your environment, you can remove these
 # and manage later adjustments from /#/admin/settings.

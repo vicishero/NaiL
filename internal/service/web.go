@@ -15,6 +15,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rocboss/paopao-ce/internal/conf"
 	"github.com/rocboss/paopao-ce/internal/servants"
+	"github.com/rocboss/paopao-ce/internal/servants/chain"
 )
 
 type webService struct {
@@ -43,6 +44,9 @@ func newWebEngine() *gin.Engine {
 	e.HandleMethodNotAllowed = true
 	e.Use(gin.Logger())
 	e.Use(gin.Recovery())
+
+	// 全局限流中间件（一处添加，全局生效）
+	e.Use(chain.RateLimit())
 
 	// 跨域配置
 	corsConfig := cors.DefaultConfig()

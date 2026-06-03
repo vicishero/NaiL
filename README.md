@@ -211,6 +211,7 @@ For the current implementation status of each feature, see [features-status.md](
 - [docs/deploy/](docs/deploy/) - deployment documentation
 - [docs/openapi/](docs/openapi/) - exported API documentation assets
 - [docs/proposal/](docs/proposal/) - design notes and feature proposals
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - backend architecture and code structure documentation
 - [deployed-sites.md](deployed-sites.md) - known deployed instances
 - [ROADMAP.md](ROADMAP.md) - roadmap and planning notes
 

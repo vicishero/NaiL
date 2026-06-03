@@ -22,6 +22,7 @@ const (
 	_smsCaptchaKey        = "paopao_sms_captcha"
 	_countWhisperKey      = "paopao_whisper_key"
 	_rechargeStatusKey    = "paopao_recharge_status:"
+	_rateLimitKeyPrefix   = "paopao_ratelimit:"
 )
 
 type redisCache struct {
@@ -157,4 +158,52 @@ func (r *redisCache) SetRechargeStatus(ctx context.Context, tradeNo string) erro
 
 func (r *redisCache) DelRechargeStatus(ctx context.Context, tradeNo string) error {
 	return r.c.Do(ctx, r.c.B().Del().Key(_rechargeStatusKey+tradeNo).Build()).Error()
+}
+
+// RateLimitAcquire 限流获取许可，使用Redis Lua脚本保证原子性
+func (r *redisCache) RateLimitAcquire(ctx context.Context, key string, limit int, duration time.Duration) (bool, int, error) {
+	fullKey := _rateLimitKeyPrefix + key
+	windowMs := duration.Milliseconds()
+
+	// 使用Redis Lua脚本保证原子性
+	script := rueidis.NewLuaScript(`
+		local key = KEYS[1]
+		local limit = tonumber(ARGV[1])
+		local window_ms = tonumber(ARGV[2])
+
+		-- 获取当前窗口的请求数
+		local current = redis.call('GET', key)
+		if current == false then
+			current = 0
+		else
+			current = tonumber(current)
+		end
+
+		-- 如果请求数超过限制，返回失败
+		if current >= limit then
+			return {0, current}
+		end
+
+		-- 增加计数并设置过期时间
+		local new_count = redis.call('INCR', key)
+		if new_count == 1 then
+			redis.call('PEXPIRE', key, window_ms)
+		end
+
+		return {1, new_count}
+	`)
+
+	resp, err := script.Exec(ctx, r.c, []string{fullKey}, []string{
+		fmt.Sprintf("%d", limit),
+		fmt.Sprintf("%d", windowMs),
+	}).ToArray()
+
+	if err != nil {
+		return false, 0, err
+	}
+
+	success, _ := resp[0].AsInt64()
+	count, _ := resp[1].AsInt64()
+
+	return success == 1, int(count), nil
 }

@@ -211,6 +211,7 @@ release/paopao serve --no-default-features --features sqlite3,localoss,loggerfil
 - [docs/deploy/](docs/deploy/) - 部署相关文档
 - [docs/openapi/](docs/openapi/) - 导出的 API 文档资源
 - [docs/proposal/](docs/proposal/) - 设计说明与功能提案
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - 后端架构与代码结构文档
 - [deployed-sites.md](deployed-sites.md) - 已知部署站点列表
 - [ROADMAP.md](ROADMAP.md) - 路线图与规划说明
 
