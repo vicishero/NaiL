@@ -46,7 +46,7 @@ func newAdminEngine() *gin.Engine {
 	// 跨域配置
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
-	corsConfig.AddAllowHeaders("Authorization")
+	corsConfig.AddAllowHeaders("Authorization", "x-token", "x-user-id", "Content-Type")
 	e.Use(cors.New(corsConfig))
 
 	// 默认404

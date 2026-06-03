@@ -12,4 +12,6 @@ import (
 // RouteWeb register Manager route
 func RouteManager(e *gin.Engine) {
 	api.RegisterUserServant(e, newUserSrv())
+	// 注册GVA管理后台路由，使用/api/v1作为基础路径
+	RegisterAdminRoutes(e, "/api/v1")
 }

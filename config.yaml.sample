@@ -11,7 +11,7 @@ App:
   RunMode: debug
 
 Features:
-  Default: ["Web", "Frontend:EmbedWeb", "Meili", "LocalOSS", "MySQL", "BigCacheIndex", "LoggerFile"]
+  Default: ["Web", "Admin", "Frontend:EmbedWeb", "Meili", "LocalOSS", "MySQL", "BigCacheIndex", "LoggerFile"]
 
 WebServer:
   HttpIp: 0.0.0.0

@@ -111,18 +111,18 @@ export const useUserStore = defineStore('user', () => {
   }
   /* 登出*/
   const LoginOut = async () => {
-    const res = await jsonInBlacklist()
-
-    // 登出失败
-    if (res.code !== 0) {
-      return
-    }
-
+    // 先清除本地存储，确保即使用户强制刷新也不会保留token
     await ClearStorage()
 
-    // 把路由定向到登录页，无需等待直接reload
-    router.push({ name: 'Login', replace: true })
-    window.location.reload()
+    // 尝试调用后端登出接口（失败不影响退出流程）
+    try {
+      await jsonInBlacklist()
+    } catch (e) {
+      // 忽略错误，确保退出流程不中断
+    }
+
+    // 直接跳转到登录页并强制刷新，避免路由守卫触发额外请求
+    window.location.href = '/#/login'
   }
   /* 清理数据 */
   const ClearStorage = async () => {

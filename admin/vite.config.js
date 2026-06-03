@@ -52,12 +52,10 @@ export default ({ mode }) => {
           // 需要代理的路径   例如 '/api'
           target: `${env.VITE_BASE_PATH}:${env.VITE_SERVER_PORT}/`, // 代理到 目标路径
           changeOrigin: true,
-          rewrite: (path) =>
-            path.replace(new RegExp('^' + env.VITE_BASE_API), '')
         },
         '/plugin': {
           // 需要代理的路径   例如 '/api'
-          target: `https://plugin.gin-vue-admin.com/api/`, // 代理到 目标路径
+          target: "http://127.0.0.1:8014",
           changeOrigin: true,
           rewrite: (path) =>
             path.replace(new RegExp('^/plugin'), '')
@@ -68,7 +66,7 @@ export default ({ mode }) => {
       manifest: false, // 是否产出manifest.json
       sourcemap: false, // 是否产出sourcemap.json
       outDir: outDir, // 产出目录
-      target: 'es2015',
+      target: "http://127.0.0.1:8014",
       rolldownOptions: {
         output: {
           minify: {
