@@ -18,12 +18,12 @@ declare namespace Api {
         namespace NetParams {
 
             interface RequestingFriend {
-                user_id: number;
+                user_id: string;
                 greetings: string;
             }
 
             interface AddFriend {
-                user_id: number;
+                user_id: string;
             }
 
             interface RejectFriend extends AddFriend {}

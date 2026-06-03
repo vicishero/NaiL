@@ -83,7 +83,7 @@ type GetUserProfileReq struct {
 }
 
 type GetUserProfileResp struct {
-	ID          int64  `json:"id"`
+	ID          int64 `json:"id,string"`
 	Nickname    string `json:"nickname"`
 	Username    string `json:"username"`
 	Status      int    `json:"status"`

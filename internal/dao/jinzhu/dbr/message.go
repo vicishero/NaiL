@@ -46,7 +46,7 @@ type MessageFormated struct {
 	Post           *PostFormated `json:"post"`
 	CommentID      int64         `json:"comment_id,string"`
 	Comment        *Comment      `json:"comment"`
-	ReplyID        int64         `json:"reply_id,string"`
+	ReplyID        int64         `json:"reply_id"`
 	Reply          *CommentReply `json:"reply"`
 	IsRead         int8          `json:"is_read"`
 	CreatedOn      int64         `json:"created_on"`

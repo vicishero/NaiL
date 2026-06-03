@@ -114,7 +114,7 @@ type HighlightTweetResp struct {
 
 type VisibleTweetReq struct {
 	BaseInfo   `json:"-" binding:"-"`
-	ID         int64            `json:"id"`
+	ID         int64            `json:"id,string"`
 	Visibility TweetVisibleType `json:"visibility"`
 }
 
@@ -171,7 +171,7 @@ type UploadAttachmentReq struct {
 }
 
 type UploadAttachmentResp struct {
-	UserID    int64             `json:"user_id"`
+	UserID    int64             `json:"user_id,string"`
 	FileSize  int64             `json:"file_size"`
 	ImgWidth  int               `json:"img_width"`
 	ImgHeight int               `json:"img_height"`

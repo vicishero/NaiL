@@ -36,7 +36,7 @@ declare namespace Api {
         namespace NetParams {
 
             interface UserStatusReq {
-                id: number;
+                id: string;
                 status: number;
             }
 

@@ -26,7 +26,7 @@ type RejectFriendReq struct {
 
 type DeleteFriendReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	UserId   int64 `json:"user_id"`
+	UserId   int64 `json:"user_id,string"`
 }
 
 type GetContactsReq struct {

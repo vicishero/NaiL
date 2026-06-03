@@ -31,7 +31,7 @@ declare namespace Api {
 
             interface AuthUserRegister {
                 /** 用户UID */
-                id: number;
+                id: string;
                 /** 用户名 */
                 username: string;
             }

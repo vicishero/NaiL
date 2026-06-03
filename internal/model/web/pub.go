@@ -30,6 +30,6 @@ type RegisterReq struct {
 }
 
 type RegisterResp struct {
-	UserId   int64  `json:"id"`
+	UserId   int64 `json:"id,string"`
 	Username string `json:"username"`
 }

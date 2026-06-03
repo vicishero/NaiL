@@ -14,11 +14,11 @@ declare namespace Api {
         namespace NetParams {
 
             interface UserGetAttachment {
-                id: number;
+                id: string;
             }
 
             interface UserPrecheckAttachment {
-                id: number;
+                id: string;
             }
         }
 
@@ -29,7 +29,7 @@ declare namespace Api {
             }
 
             interface UserPrecheckAttachment {
-                paid: number;
+                paid: string;
             }
         }
 

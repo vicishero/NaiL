@@ -26,7 +26,7 @@ type UserInfoReq struct {
 }
 
 type UserInfoResp struct {
-	Id          int64  `json:"id"`
+	Id          int64 `json:"id,string"`
 	Nickname    string `json:"nickname"`
 	Username    string `json:"username"`
 	Status      int    `json:"status"`

@@ -67,12 +67,12 @@ declare namespace Api {
             }
 
             interface UserWhisper {
-                user_id: number;
+                user_id: string;
                 content: string;
             }
 
             interface FollowUserReq {
-                user_id: number;
+                user_id: string;
             }
 
             interface UnfollowUserReq extends FollowUserReq { }
@@ -127,7 +127,7 @@ declare namespace Api {
             }
 
             interface ReadMessageReq {
-                id: number;
+                id: string;
             }
 
             interface UserGetCollections {
@@ -152,7 +152,7 @@ declare namespace Api {
             }
 
             interface UserGetRecharge {
-                id: number;
+                id: string;
             }
 
         }
@@ -210,7 +210,7 @@ declare namespace Api {
             }
 
             interface UserReqRecharge {
-                id: number;
+                id: string;
                 pay: string;
             }
 

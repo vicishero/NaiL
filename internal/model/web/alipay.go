@@ -32,7 +32,7 @@ type UserRechargeLinkReq struct {
 }
 
 type UserRechargeLinkResp struct {
-	Id  int64  `json:"id"`
+	Id  int64  `json:"id,string"`
 	Pay string `json:"pay"`
 }
 
@@ -42,7 +42,7 @@ type UserRechargeResultReq struct {
 }
 
 type UserRechargeResultResp struct {
-	Id     int64  `json:"id"`
+	Id     int64 `json:"id,string"`
 	Status string `json:"status"`
 }
 
