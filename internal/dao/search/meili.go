@@ -6,6 +6,7 @@ package search
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -27,8 +28,8 @@ type meiliTweetSearchServant struct {
 }
 
 type postInfo struct {
-	ID              int64             `json:"id"`
-	UserID          int64             `json:"user_id"`
+	ID              int64             `json:"id,string"`
+	UserID          int64             `json:"user_id,string"`
 	CommentCount    int64             `json:"comment_count"`
 	CollectionCount int64             `json:"collection_count"`
 	UpvoteCount     int64             `json:"upvote_count"`
@@ -210,8 +211,8 @@ func (s *meiliTweetSearchServant) toDocs(data []core.TsDocItem) []map[string]any
 	docs := make([]map[string]any, 0, len(data))
 	for _, d := range data {
 		docs = append(docs, map[string]any{
-			"id":                d.Post.ID,
-			"user_id":           d.Post.UserID,
+			"id":                strconv.FormatInt(d.Post.ID, 10),
+			"user_id":           strconv.FormatInt(d.Post.UserID, 10),
 			"comment_count":     d.Post.CommentCount,
 			"collection_count":  d.Post.CollectionCount,
 			"upvote_count":      d.Post.UpvoteCount,

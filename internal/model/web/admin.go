@@ -10,7 +10,7 @@ type SyncSearchIndexReq struct {
 
 type ChangeUserStatusReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" form:"id" binding:"required"`
+	ID       int64 `json:"id,string" form:"id" binding:"required"`
 	Status   int   `json:"status" form:"status" binding:"required,oneof=1 2"`
 }
 

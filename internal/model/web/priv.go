@@ -33,15 +33,15 @@ type TweetVisibleType cs.TweetVisibleType
 
 type TweetCommentThumbsReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	TweetId    int64 `json:"tweet_id" binding:"required"`
-	CommentId  int64 `json:"comment_id" binding:"required"`
+	TweetId    int64 `json:"tweet_id,string" binding:"required"`
+	CommentId  int64 `json:"comment_id,string" binding:"required"`
 }
 
 type TweetReplyThumbsReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	TweetId    int64 `json:"tweet_id" binding:"required"`
-	CommentId  int64 `json:"comment_id" binding:"required"`
-	ReplyId    int64 `json:"reply_id" binding:"required"`
+	TweetId    int64 `json:"tweet_id,string" binding:"required"`
+	CommentId  int64 `json:"comment_id,string" binding:"required"`
+	ReplyId    int64 `json:"reply_id,string" binding:"required"`
 }
 
 type PostContentItem struct {
@@ -64,12 +64,12 @@ type CreateTweetResp ms.PostFormated
 
 type DeleteTweetReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type StarTweetReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	ID         int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type StarTweetResp struct {
@@ -78,7 +78,7 @@ type StarTweetResp struct {
 
 type CollectionTweetReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	ID         int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type CollectionTweetResp struct {
@@ -87,7 +87,7 @@ type CollectionTweetResp struct {
 
 type LockTweetReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type LockTweetResp struct {
@@ -96,12 +96,12 @@ type LockTweetResp struct {
 
 type StickTweetReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type HighlightTweetReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type StickTweetResp struct {
@@ -124,7 +124,7 @@ type VisibleTweetResp struct {
 
 type CreateCommentReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	PostID     int64              `json:"post_id" binding:"required"`
+	PostID     int64 `json:"post_id,string" binding:"required"`
 	Contents   []*PostContentItem `json:"contents" binding:"required"`
 	Users      []string           `json:"users" binding:"required"`
 	ClientIP   string             `json:"-" binding:"-"`
@@ -134,9 +134,9 @@ type CreateCommentResp ms.Comment
 
 type CreateCommentReplyReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	CommentID  int64  `json:"comment_id" binding:"required"`
+	CommentID  int64 `json:"comment_id,string" binding:"required"`
 	Content    string `json:"content" binding:"required"`
-	AtUserID   int64  `json:"at_user_id"`
+	AtUserID   int64 `json:"at_user_id,string"`
 	ClientIP   string `json:"-" binding:"-"`
 }
 
@@ -144,12 +144,12 @@ type CreateCommentReplyResp ms.CommentReply
 
 type DeleteCommentReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type HighlightCommentReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	CommentId  int64 `json:"id" binding:"required"`
+	CommentId  int64 `json:"id,string" binding:"required"`
 }
 
 type HighlightCommentResp struct {
@@ -158,7 +158,7 @@ type HighlightCommentResp struct {
 
 type DeleteCommentReplyReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	ID       int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type UploadAttachmentReq struct {
@@ -199,7 +199,7 @@ type DownloadAttachmentResp struct {
 
 type StickTopicReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	TopicId    int64 `json:"topic_id" binding:"required"`
+	TopicId    int64 `json:"topic_id,string" binding:"required"`
 }
 
 type StickTopicResp struct {
@@ -208,7 +208,7 @@ type StickTopicResp struct {
 
 type PinTopicReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	TopicId    int64 `json:"topic_id" binding:"required"`
+	TopicId    int64 `json:"topic_id,string" binding:"required"`
 }
 
 type PinTopicResp struct {
@@ -217,12 +217,12 @@ type PinTopicResp struct {
 
 type FollowTopicReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	TopicId    int64 `json:"topic_id" binding:"required"`
+	TopicId    int64 `json:"topic_id,string" binding:"required"`
 }
 
 type UnfollowTopicReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	TopicId    int64 `json:"topic_id" binding:"required"`
+	TopicId    int64 `json:"topic_id,string" binding:"required"`
 }
 
 // Check 检查PostContentItem属性

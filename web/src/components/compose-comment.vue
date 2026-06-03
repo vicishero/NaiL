@@ -188,7 +188,7 @@ const props = withDefaults(
   }>(),
   {
     lock: 0,
-    postId: 0,
+    postId: '0',
   },
 );
 

@@ -11,12 +11,12 @@ import (
 
 type FollowUserReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	UserId   int64 `json:"user_id" binding:"required"`
+	UserId   int64 `json:"user_id,string" binding:"required"`
 }
 
 type UnfollowUserReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	UserId   int64 `json:"user_id" binding:"required"`
+	UserId   int64 `json:"user_id,string" binding:"required"`
 }
 
 type ListFollowsReq struct {

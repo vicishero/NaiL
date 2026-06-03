@@ -5,7 +5,7 @@
         <n-list class="main-content-wrap" bordered>
             <n-list-item>
                 <n-spin :show="loading">
-                    <div class="detail-wrap" v-if="post.id > 0">
+                    <div class="detail-wrap" v-if="post.id && post.id != '0'">
                         <post-detail :post="post" @reload="reloadPost" />
                     </div>
                     <div class="empty-wrap" v-else>
@@ -13,7 +13,7 @@
                     </div>
                 </n-spin>
             </n-list-item>
-            <div class="comment-opts-wrap" v-if="post.id > 0">
+            <div class="comment-opts-wrap" v-if="post.id && post.id != '0'">
                 <n-tabs type="bar" justify-content="end" size="small" tab-style="margin-left: -24px;" animated @update:value="commentTab">
                     <template #prefix>
                         <span class="comment-title-item">评论</span>
@@ -23,11 +23,11 @@
                     <n-tab-pane name="newest" tab="最新" />
                 </n-tabs>
             </div>
-            <n-list-item v-if="post.id > 0">
+            <n-list-item v-if="post.id && post.id != '0'">
                 <compose-comment :lock="post.is_lock" :post-id="post.id" @post-success="reloadComments" />
             </n-list-item>
 
-            <div v-if="post.id > 0">
+            <div v-if="post.id && post.id != '0'">
                 <div v-if="commentLoading" class="skeleton-wrap">
                     <post-skeleton :num="5" />
                 </div>
@@ -69,7 +69,7 @@ const post = ref<Item.PostProps>({} as Item.PostProps);
 const loading = ref(false);
 const commentLoading = ref(false);
 const comments = ref<Item.CommentProps[]>([]);
-const postId = computed(() => (route.query.id as string) || '');
+const postId = computed(() => route.query.id as string);
 const sortStrategy = ref<'default' | 'hots' | 'newest'>('default');
 const defaultCommentsSort = ref<boolean>(true);
 const pageSize = 20;
@@ -109,7 +109,7 @@ const reloadPost = (post_id: string) => {
 
 const loadPost = () => {
   post.value = {
-    id: 0,
+    id: '0',
   } as Item.PostProps;
   loading.value = true;
   getPost({
@@ -245,7 +245,7 @@ const loadNewestComments = ($state: any) => {
 };
 
 const loadComments = ($state: any) => {
-  if (postId.value < 1) {
+  if (!postId.value) {
     return;
   }
   if (comments.value.length === 0) {
@@ -287,7 +287,7 @@ onMounted(() => {
 });
 
 watch(postId, () => {
-  if (postId.value > 0 && route.name === 'post') {
+  if (postId.value && route.name === 'post') {
     loadPost();
   }
 });

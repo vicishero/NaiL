@@ -52,7 +52,7 @@ type GetMessagesResp struct {
 
 type ReadMessageReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	ID         int64 `json:"id" binding:"required"`
+	ID         int64 `json:"id,string" binding:"required"`
 }
 
 type ReadAllMessageReq struct {
@@ -61,7 +61,7 @@ type ReadAllMessageReq struct {
 
 type SendWhisperReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	UserID     int64  `json:"user_id" binding:"required"`
+	UserID     int64  `json:"user_id,string" binding:"required"`
 	Content    string `json:"content" binding:"required"`
 }
 

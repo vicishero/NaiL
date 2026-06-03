@@ -10,18 +10,18 @@ import (
 
 type RequestingFriendReq struct {
 	BaseInfo  `json:"-" binding:"-"`
-	UserId    int64  `json:"user_id" binding:"required"`
+	UserId    int64  `json:"user_id,string" binding:"required"`
 	Greetings string `json:"greetings" binding:"required"`
 }
 
 type AddFriendReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	UserId   int64 `json:"user_id" binding:"required"`
+	UserId   int64 `json:"user_id,string" binding:"required"`
 }
 
 type RejectFriendReq struct {
 	BaseInfo `json:"-" binding:"-"`
-	UserId   int64 `json:"user_id" binding:"required"`
+	UserId   int64 `json:"user_id,string" binding:"required"`
 }
 
 type DeleteFriendReq struct {

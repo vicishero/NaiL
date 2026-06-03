@@ -16,6 +16,18 @@ export function usePostContent(post: Item.PostProps, includeExtraFields: boolean
           links: [],
           attachments: [],
           charge_attachments: [],
+          user: {
+            id: '0',
+            username: '',
+            nickname: '',
+            avatar: '',
+            is_admin: false,
+            is_friend: false,
+            is_following: false,
+            created_on: 0,
+            follows: 0,
+            followings: 0,
+          },
         },
         post,
       );
