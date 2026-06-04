@@ -1,141 +1,119 @@
 <template>
-    <div class="post-item" @click="goPostDetail(post.id)">
-        <n-thing content-indented>
-            <template #avatar>
-                <n-avatar round :size="30" :src="post.user.avatar" />
-            </template>
-            <template #header>
-                    <span class="nickname-wrap">
-                        <router-link
-                            @click.stop
-                            class="username-link"
-                            :to="{
-                                name: 'user',
-                                query: { s: post.user.username },
-                            }"
-                        >
+    <article class="post-item" @click="goPostDetail(post.id)">
+        <div class="post-layout">
+            <!-- 左侧头像 -->
+            <div class="post-avatar" @click.stop="goUserProfile">
+                <n-avatar round :size="48" :src="post.user.avatar" />
+            </div>
+
+            <!-- 右侧内容 -->
+            <div class="post-body">
+                <!-- 头部：昵称 + 用户名 + 时间 + 更多 -->
+                <div class="post-header">
+                    <div class="post-header-left">
+                        <span class="nickname" @click.stop="goUserProfile">
                             {{ post.user.nickname }}
-                        </router-link>
-                    </span>
-                    <span class="username-wrap"> @{{ post.user.username }} </span>
-                    <n-tag
-                        v-if="post.is_top"
-                        class="top-tag"
-                        type="warning"
-                        size="small"
-                        round
-                    >
-                        置顶
-                    </n-tag>
-                    <n-tag
-                        v-if="post.visibility == 1"
-                        class="top-tag"
-                        type="error"
-                        size="small"
-                        round
-                    >
-                        私密
-                    </n-tag>
-                    <n-tag
-                        v-if="post.visibility == 2"
-                        class="top-tag"
-                        type="info"
-                        size="small"
-                        round
-                    >
-                        好友可见
-                    </n-tag>
-                    <div v-if="isMobile">
-                        <span class="timestamp-mobile">
-                            {{ formatPrettyDate(post.created_on) }} {{ post.ip_loc }}
                         </span>
+                        <span class="username">@{{ post.user.username }}</span>
+                        <span class="dot">·</span>
+                        <span class="timestamp">{{ formatPrettyDate(post.created_on) }}</span>
+                        <n-tag
+                            v-if="post.is_top"
+                            class="badge-tag"
+                            type="warning"
+                            size="tiny"
+                            round
+                        >
+                            置顶
+                        </n-tag>
+                        <n-tag
+                            v-if="post.visibility == 1"
+                            class="badge-tag"
+                            type="error"
+                            size="tiny"
+                            round
+                        >
+                            私密
+                        </n-tag>
+                        <n-tag
+                            v-if="post.visibility == 2"
+                            class="badge-tag"
+                            type="info"
+                            size="tiny"
+                            round
+                        >
+                            好友可见
+                        </n-tag>
                     </div>
-            </template>
-            <template #header-extra>
-                <div class="item-header-extra">
-                    <span v-if="!isMobile" class="timestamp">
-                        {{ post.ip_loc ? post.ip_loc + ' · ' : post.ip_loc }}
-                        {{ formatPrettyDate(post.created_on) }}
-                    </span>
                     <n-dropdown
                         placement="bottom-end"
-                        :trigger="isMobile ? 'click' : 'hover'"
+                        trigger="click"
                         size="small"
                         :options="tweetOptions"
                         @select="handleTweetAction"
                     >
-                        <n-button quaternary circle>
+                        <n-button class="more-btn" quaternary circle size="tiny" @click.stop>
                             <template #icon>
-                                <n-icon>
-                                    <more-horiz-filled />
-                                </n-icon>
+                                <n-icon :size="18"><more-horiz-filled /></n-icon>
                             </template>
                         </n-button>
                     </n-dropdown>
                 </div>
-            </template>
-            <template #description v-if="post.texts.length > 0">
-                <div v-if="isMobile" @click="goPostDetail(post.id)">
-                    <span v-for="content in post.texts"
+
+                <!-- 位置信息 -->
+                <div v-if="post.ip_loc && !isMobile" class="post-location">
+                    {{ post.ip_loc }}
+                </div>
+
+                <!-- 正文内容 -->
+                <div v-if="post.texts.length > 0" class="post-content">
+                    <span
+                        v-for="content in post.texts"
                         :key="content.id"
                         class="post-text"
                         @click.stop="doClickText($event, post.id)"
-                        v-html="preparePost(content.content, '展开', '收起', profile.tweetMobileEllipsisSize, inFoldStyle)"
+                        v-html="preparePost(content.content, '展开', '收起', isMobile ? profile.tweetMobileEllipsisSize : profile.tweetWebEllipsisSize, inFoldStyle)"
                     ></span>
                 </div>
-                <span
-                    v-else
-                    v-for="content in post.texts"
-                    :key="content.id"
-                    class="post-text hover"
-                    @click.stop="doClickText($event, post.id)"
-                    v-html="preparePost(content.content, '展开', '收起', profile.tweetWebEllipsisSize, inFoldStyle)"
-                ></span>
-            </template>
 
-            <template #footer>
-                <post-attachment 
-                    v-if="post.attachments.length > 0"
-                    :attachments="post.attachments" />
-                <post-attachment
-                    v-if="post.charge_attachments.length > 0"
-                    :attachments="post.charge_attachments"
-                    :price="post.attachment_price"
+                <!-- 附件/图片/视频/链接 -->
+                <div class="post-media">
+                    <post-attachment
+                        v-if="post.attachments.length > 0"
+                        :attachments="post.attachments" />
+                    <post-attachment
+                        v-if="post.charge_attachments.length > 0"
+                        :attachments="post.charge_attachments"
+                        :price="post.attachment_price"
+                    />
+                    <post-image
+                        v-if="post.imgs.length > 0"
+                        :imgs="post.imgs" />
+                    <post-video
+                        v-if="post.videos.length > 0"
+                        :videos="post.videos" />
+                    <post-link
+                        v-if="post.links.length > 0"
+                        :links="post.links" />
+                </div>
+
+                <!-- 操作栏 -->
+                <post-action-bar
+                    :comment-count="post.comment_count"
+                    :repost-count="0"
+                    :like-count="post.upvote_count"
+                    :bookmark-count="post.collection_count"
+                    :is-liked="false"
+                    :is-bookmarked="false"
+                    @comment="goPostDetail(post.id)"
+                    @repost="handleRepost"
+                    @like="handlePostStar"
+                    @bookmark="handlePostCollection"
+                    @share="handleShare"
                 />
-                <post-image
-                    v-if="post.imgs.length > 0"
-                    :imgs="post.imgs" />
-                <post-video
-                    v-if="post.videos.length > 0"
-                    :videos="post.videos" />
-                <post-link
-                    v-if="post.links.length > 0"
-                    :links="post.links" />
-            </template>
-            <template #action>
-                <n-space justify="space-between">
-                    <div class="opt-item hover" @click.stop="handlePostStar">
-                        <n-icon size="18" class="opt-item-icon">
-                            <heart-outline />
-                        </n-icon>
-                        {{ post.upvote_count }}
-                    </div>
-                    <div class="opt-item hover" @click.stop="goPostDetail(post.id)">
-                        <n-icon size="18" class="opt-item-icon">
-                            <chatbox-outline />
-                        </n-icon>
-                        {{ post.comment_count }}
-                    </div>
-                    <div class="opt-item hover" @click.stop="handlePostCollection">
-                        <n-icon size="18" class="opt-item-icon">
-                            <bookmark-outline />
-                        </n-icon>
-                        {{ post.collection_count }}
-                    </div>
-                </n-space>
-            </template>
-        </n-thing>
-    </div>
+            </div>
+        </div>
+    </article>
 </template>
 
 <script setup lang="ts">
@@ -166,6 +144,7 @@ import { storeToRefs } from 'pinia';
 import { Api } from '@/utils/request';
 import UserAction from '@/composables/useUserAction';
 import { usePostContent } from '@/composables/usePostContent';
+import PostActionBar from '@/components/post-action-bar.vue';
 
 const router = useRouter();
 
@@ -183,8 +162,8 @@ const props = withDefaults(defineProps<{
     addFollowAction?: boolean;
     isMobile?: boolean;
 }>(), {
-	addFollowAction: false,
-	addFriendAction: false,
+    addFollowAction: false,
+    addFriendAction: false,
     isMobile: false,
 });
 
@@ -278,11 +257,11 @@ const handleTweetAction = async (
       UserAction.followAction(dialog, props.post.user.id, props.post.user.username, props.post.user.is_following)
         .then(_action => {
           emit('post-follow-action', props.post.user.id, _action);
-        })
-		  emit('handle-follow-action', props.post);
+        });
+      emit('handle-follow-action', props.post);
       break;
     default:
-    	break;
+        break;
   }
 };
 
@@ -334,11 +313,31 @@ const handlePostCollection = () => {
       console.log(err);
     });
 };
+const handleRepost = () => {
+  copy(
+    `${window.location.origin}/#/post?id=${post.value.id}&share=copy_link&t=${new Date().getTime()}`,
+  );
+  window.$message.success('链接已复制到剪贴板');
+};
+const handleShare = () => {
+  copy(
+    `${window.location.origin}/#/post?id=${post.value.id}&share=copy_link&t=${new Date().getTime()}`,
+  );
+  window.$message.success('链接已复制到剪贴板');
+};
 const goPostDetail = (id: string) => {
   router.push({
     name: 'post',
     query: {
       id,
+    },
+  });
+};
+const goUserProfile = () => {
+  router.push({
+    name: 'user',
+    query: {
+      s: post.value.user.username,
     },
   });
 };
@@ -373,74 +372,125 @@ const doClickText = (e: MouseEvent, id: string) => {
 };
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .post-item {
-    width: 100%;
-    padding: 16px;
-    box-sizing: border-box;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-color, #eff3f4);
+    cursor: pointer;
+    transition: background-color 0.2s ease;
 
-    .nickname-wrap {
-        font-size: 14px;
-    }
-    .username-wrap {
-        font-size: 14px;
-        opacity: 0.75;
-    }
-
-    .top-tag {
-        transform: scale(0.75);
-    }
-    .timestamp-mobile {
-        margin-top: 2px;
-        opacity: 0.75;
-        font-size: 11px;
-    }
-    .item-header-extra {
-        display: flex;
-        align-items: center;
-        opacity: 0.75;
-        .timestamp {
-            font-size: 12px;
-        }
-    }
-    .post-text {
-        text-align: justify;
-        overflow: hidden;
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-
-    .opt-item {
-        display: flex;
-        align-items: center;
-        opacity: 0.7;
-        .opt-item-icon {
-            margin-right: 10px;
-        }
-    }
-    
     &:hover {
         background: #f7f9f9;
     }
-    
-    &.hover {
-        cursor: pointer;
-    }
+}
 
-    .n-thing-avatar {
-        margin-top: 0;
-    }
-    .n-thing-header {
-        line-height: 16px;
-        margin-bottom: 8px !important;
+.post-layout {
+    display: flex;
+    gap: 12px;
+}
+
+.post-avatar {
+    flex-shrink: 0;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.85;
     }
 }
+
+.post-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.post-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.post-header-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+.nickname {
+    font-weight: 700;
+    color: inherit;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.username {
+    color: #888;
+    font-size: 14px;
+}
+
+.dot {
+    color: #888;
+}
+
+.timestamp {
+    color: #888;
+    font-size: 14px;
+}
+
+.badge-tag {
+    transform: scale(0.75);
+    transform-origin: left center;
+}
+
+.more-btn {
+    flex-shrink: 0;
+    color: #888;
+}
+
+.post-location {
+    font-size: 13px;
+    color: #888;
+    margin-top: 2px;
+}
+
+.post-content {
+    margin-top: 4px;
+}
+
+.post-text {
+    text-align: justify;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-all;
+    font-size: 15px;
+    line-height: 1.5;
+}
+
+.post-media {
+    margin-top: 8px;
+}
+
 .dark {
     .post-item {
+        border-bottom-color: #2f3336;
+
         &:hover {
-            background: #18181c;
+            background: #080808;
         }
-        background-color: rgba(16, 16, 20, 0.75);
+    }
+
+    .username,
+    .dot,
+    .timestamp,
+    .more-btn,
+    .post-location {
+        color: #999;
     }
 }
 </style>

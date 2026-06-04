@@ -80,7 +80,7 @@ const props = withDefaults(
     atUsername: string;
   }>(),
   {
-    atUserid: 0,
+    atUserid: '0',
     atUsername: '',
   },
 );

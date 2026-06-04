@@ -138,7 +138,7 @@ import { YesNoEnum } from '@/utils/IEnum';
 import { storeToRefs } from 'pinia';
 
 const router = useRouter();
-const replyAtUserID = ref(0);
+const replyAtUserID = ref('0');
 const replyAtUsername = ref('');
 const replyComposeRef = ref();
 
@@ -197,7 +197,7 @@ const doClickText = (e: MouseEvent, id: string) => {
 };
 
 const focusReply = (reply: Item.ReplyProps) => {
-  replyAtUserID.value = reply.user_id;
+  replyAtUserID.value = String(reply.user_id);
   replyAtUsername.value = reply.user?.username || '';
   replyComposeRef.value?.switchReply(true);
 };
@@ -205,7 +205,7 @@ const reload = () => {
   emit('reload');
 };
 const resetReply = () => {
-  replyAtUserID.value = 0;
+  replyAtUserID.value = '0';
   replyAtUsername.value = '';
 };
 

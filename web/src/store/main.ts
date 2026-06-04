@@ -1,17 +1,14 @@
 import { defineStore } from 'pinia';
-import { reactive, ref } from 'vue';
+import { ref } from 'vue';
 
 export const useStoreMain = defineStore('main', () => {
   const refresh = ref(Date.now());
   const refreshTopicFollow = ref(Date.now());
   const theme = ref(localStorage.getItem('PAOPAO_THEME'));
-  const collapsedLeft = ref(document.body.clientWidth <= 821);
-  const collapsedRight = ref(document.body.clientWidth <= 821);
-  const drawerModelShow = ref(document.body.clientWidth <= 821);
-  const desktopModelShow = ref(document.body.clientWidth > 821);
   const authModalShow = ref(false);
   const authModelTab = ref('signin');
   const unreadMsgCount = ref(0);
+  const composeModalShow = ref(false);
 
   function doRefresh(val?: number) {
     refresh.value = val || Date.now();
@@ -37,34 +34,24 @@ export const useStoreMain = defineStore('main', () => {
     authModelTab.value = key;
   }
 
-  function triggerCollapsedLeft(status: boolean) {
-    collapsedLeft.value = status;
-    drawerModelShow.value = status;
-    desktopModelShow.value = !status;
-  }
-
-  function triggerCollapsedRight(status: boolean) {
-    collapsedRight.value = status;
+  function triggerCompose(status: boolean) {
+    composeModalShow.value = status;
   }
 
   return {
     refresh,
     refreshTopicFollow,
     theme,
-    collapsedLeft,
-    collapsedRight,
-    drawerModelShow,
-    desktopModelShow,
     authModalShow,
     authModelTab,
     unreadMsgCount,
+    composeModalShow,
     doRefresh,
     doRefreshTopicFollow,
     updateUnreadMsgCount,
     triggerTheme,
     triggerAuth,
     triggerAuthKey,
-    triggerCollapsedLeft,
-    triggerCollapsedRight,
+    triggerCompose,
   };
 });

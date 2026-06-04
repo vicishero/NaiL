@@ -51,6 +51,30 @@ const routes = [
     component: () => import('@/views/User.vue'),
   },
   {
+    path: '/explore',
+    name: 'explore',
+    meta: {
+      title: '探索',
+    },
+    component: () => import('@/views/Explore.vue'),
+  },
+  {
+    path: '/search',
+    name: 'search',
+    meta: {
+      title: '搜索',
+    },
+    component: () => import('@/views/Search.vue'),
+  },
+  {
+    path: '/assets',
+    name: 'assets',
+    meta: {
+      title: '资产',
+    },
+    component: () => import('@/views/Assets.vue'),
+  },
+  {
     path: '/messages',
     name: 'messages',
     meta: {

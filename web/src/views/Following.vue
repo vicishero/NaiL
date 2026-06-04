@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav :title="nickname" :back="true" />
 
         <n-list class="main-content-wrap" bordered>
             <n-tabs type="line" animated :default-value="tabler" @update:value="changeTab">

@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="用户详情" />
 
         <n-list class="main-content-wrap profile-wrap" bordered>
             <!-- 基础信息 -->
@@ -84,6 +83,27 @@
                     </div>
                 </div>
 
+                <!-- 操作按钮 -->
+                <div class="user-actions" v-if="userInfo.id > 0 && userInfo.username !== user.username">
+                    <n-button class="action-btn" round @click="goChat">
+                        <template #icon><n-icon><chatbubble-outline /></n-icon></template>
+                        私聊
+                    </n-button>
+                    <n-button
+                        class="action-btn"
+                        round
+                        :type="user.is_following ? 'default' : 'primary'"
+                        @click="handleFollow"
+                    >
+                        <template #icon><n-icon><add-outline /></n-icon></template>
+                        {{ user.is_following ? '已订阅' : '订阅' }}
+                    </n-button>
+                    <n-button class="action-btn" round type="warning" @click="handleReward">
+                        <template #icon><n-icon><cash-outline /></n-icon></template>
+                        打赏
+                    </n-button>
+                </div>
+
                 <!-- 私信组件 -->
                 <whisper :show="showWhisper" :user="user" @success="whisperSuccess" />
                 <!-- 加好友组件 -->
@@ -147,6 +167,9 @@ import {
   CubeOutline,
   BodyOutline,
   WalkOutline,
+  ChatbubbleOutline,
+  AddOutline,
+  CashOutline,
 } from '@vicons/ionicons5';
 import InfiniteLoading from 'v3-infinite-loading';
 import { useStoreUser } from '@/store/user';
@@ -514,6 +537,18 @@ const openDeleteFriend = () => {
     },
   });
 };
+const goChat = () => {
+    router.push({ name: 'messages', query: { tab: 'chat' } });
+};
+
+const handleFollow = () => {
+    handleFollowUser();
+};
+
+const handleReward = () => {
+    window.$message?.info('打赏功能开发中');
+};
+
 const handleFollowUser = () => {
 	UserAction.followAction(dialog, user.id, user.username, user.is_following)
 		.then(_action => {
@@ -624,6 +659,18 @@ watch(
         top: 16px;
         right: 16px;
         opacity: 0.75;
+    }
+}
+
+.user-actions {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px 0;
+    justify-content: center;
+
+    .action-btn {
+        flex: 1;
+        max-width: 140px;
     }
 }
 

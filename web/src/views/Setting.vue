@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="设置" theme />
         <n-card title="基本信息" size="small" class="setting-card">
             <div class="base-line avatar">
                 <n-avatar

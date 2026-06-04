@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="主页" />
 
         <n-list
             class="main-content-wrap profile-wrap"
@@ -65,16 +64,13 @@
                 </div>
 
                 <div class="user-opts">
-                    <n-dropdown placement="bottom-end" trigger="click" size="small" :options="userOptions"
-                        @select="handleUserAction">
-                        <n-button quaternary circle>
-                            <template #icon>
-                                <n-icon>
-                                    <more-horiz-filled />
-                                </n-icon>
-                            </template>
-                        </n-button>
-                    </n-dropdown>
+                    <n-button quaternary circle @click="showSidebar = true">
+                        <template #icon>
+                            <n-icon>
+                                <more-horiz-filled />
+                            </n-icon>
+                        </template>
+                    </n-button>
                 </div>
             </div>
             <!-- </n-spin> -->
@@ -115,6 +111,9 @@
                 </template>
             </InfiniteLoading>
         </n-space>
+
+        <!-- 个人中心侧边栏 -->
+        <profile-sidebar :show="showSidebar" @close="showSidebar = false" />
     </div>
 </template>
 
@@ -123,12 +122,12 @@ import { h, ref, Component, onMounted, computed, watch } from 'vue';
 import { NIcon } from 'naive-ui';
 import { useStoreMain } from '@/store/main';
 import { useRoute, useRouter } from 'vue-router';
-import { useDialog, DropdownOption } from 'naive-ui';
+import { useDialog } from 'naive-ui';
 import { formatDate } from '@/utils/formatTime';
 import { prettyQuoteNum } from '@/utils/count';
 import InfiniteLoading from 'v3-infinite-loading';
-import { SettingsOutline } from '@vicons/ionicons5';
 import { MoreHorizFilled } from '@vicons/material';
+import ProfileSidebar from '@/components/profile-sidebar.vue';
 import { useStoreUser } from '@/store/user';
 import { storeToRefs } from 'pinia';
 import { Api } from '@/utils/request';
@@ -179,6 +178,7 @@ const whisperReceiver = ref<Item.UserInfo>({
   followings: 0,
   status: 1,
 });
+const showSidebar = ref(false);
 
 const listData = computed(() => {
 	switch (pageType.value) {
@@ -197,39 +197,6 @@ const listData = computed(() => {
 	}
 })
 
-const renderIcon = (icon: Component) => {
-  return () => {
-    return h(NIcon, null, {
-      default: () => h(icon),
-    });
-  };
-};
-
-const userOptions = computed(() => {
-  let options: DropdownOption[] = [
-    {
-      label: '设置',
-      key: 'setting',
-      icon: renderIcon(SettingsOutline),
-    },
-  ];
-  return options;
-});
-
-const handleUserAction = (item: 'setting') => {
-  switch (item) {
-    case 'setting':
-      router.push({
-        name: 'setting',
-        query: {
-          t: new Date().getTime(),
-        },
-      });
-      break;
-    default:
-      break;
-  }
-};
 
 const onSendWhisper = (user: Item.UserInfo) => {
   whisperReceiver.value = user;

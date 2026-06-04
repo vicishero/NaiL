@@ -1,380 +1,403 @@
 <template>
     <div>
-        <main-nav title="消息" />
+        <!-- 私信组件 -->
+        <whisper :show="showWhisper" :user="whisperReceiver" @success="whisperSuccess" />
 
-        <n-list class="main-content-wrap messages-wrap" bordered>
-            <!-- 私信组件 -->
-            <whisper :show="showWhisper" :user="whisperReceiver" @success="whisperSuccess" />
-            <n-space justify="space-between">
-				<div class="title title-action">
-					<n-button text size="small" :focusable="false" @click="handleUnreadMessage">
-						<template #icon>
-							<n-icon>
-								<UnreadIcon />
-							</n-icon>
-						</template>
-						{{ unreadMsgCount }} 条未读
-					</n-button>
-					<n-divider vertical />
-					<n-button text size="small" :focusable="false" @click="handleReadAll">全标已读</n-button>
-				</div>
-				<div class="title title-filter">
-					<n-dropdown 
-					placement="bottom-end"
-					trigger="click"
-					size="small"
-					:options="options"
-					@select="handleAction">
-						<n-button text>
-							<template #icon>
-								<n-icon>
-									<OptionsIcon />
-								</n-icon>
-							</template>
-							{{ messageStyle }}
-						</n-button>
-					</n-dropdown>
-				</div>
-            </n-space>
+        <!-- 三Tab切换 -->
+        <div class="msg-tabs">
+            <div
+                v-for="tab in tabs"
+                :key="tab.key"
+                class="msg-tab"
+                :class="{ active: activeTab === tab.key }"
+                @click="switchTab(tab.key)"
+            >
+                {{ tab.label }}
+                <n-badge
+                    v-if="tab.key === 'dm' && unreadMsgCount > 0"
+                    :value="unreadMsgCount"
+                    :max="99"
+                    size="tiny"
+                    class="tab-badge"
+                />
+            </div>
+        </div>
+
+        <!-- 聊天 Tab: Mock对话列表 -->
+        <div v-if="activeTab === 'chat'" class="chat-list">
+            <div
+                v-for="conv in chatList"
+                :key="conv.id"
+                class="chat-item"
+                @click="openChat(conv)"
+            >
+                <n-badge :value="conv.unread" :max="99" :show="conv.unread > 0">
+                    <n-avatar round :size="48" :src="conv.avatar" />
+                </n-badge>
+                <div class="chat-info">
+                    <div class="chat-top">
+                        <span class="chat-name">{{ conv.name }}</span>
+                        <span class="chat-time">{{ conv.time }}</span>
+                    </div>
+                    <div class="chat-bottom">
+                        <span class="chat-last">{{ conv.lastMsg }}</span>
+                    </div>
+                </div>
+            </div>
+            <div v-if="chatList.length === 0" class="empty-wrap">
+                <n-empty description="暂无聊天" />
+            </div>
+        </div>
+
+        <!-- 私信 Tab -->
+        <div v-if="activeTab === 'dm'">
             <div v-if="loading && list.length === 0" class="skeleton-wrap">
                 <message-skeleton :num="pageSize" />
             </div>
             <div v-else>
                 <div class="empty-wrap" v-if="list.length === 0">
-                    <n-empty size="large" description="暂无数据" />
+                    <n-empty size="large" description="暂无消息" />
                 </div>
-                <div v-else>
-                    <n-list-item v-for="m in list" :key="m.id">
+                <div v-else class="msg-list">
+                    <div v-for="m in list" :key="m.id" class="msg-card">
                         <message-item :message="m" @send-whisper="onSendWhisper" @reload="reloadMessages" />
-                     </n-list-item>
+                    </div>
                 </div>
             </div>
-        </n-list>
-        <infinite-load-more
-            :total-page="totalPage"
-            :no-more="noMore"
-            complete-text="没有更多消息了"
-            @load-more="nextPage"
-        />
+            <infinite-load-more
+                :total-page="totalPage"
+                :no-more="noMore"
+                complete-text="没有更多消息了"
+                @load-more="nextPage"
+            />
+        </div>
+
+        <!-- 系统消息 Tab -->
+        <div v-if="activeTab === 'system'">
+            <div v-if="sysLoading && sysList.length === 0" class="skeleton-wrap">
+                <message-skeleton :num="sysPageSize" />
+            </div>
+            <div v-else>
+                <div class="empty-wrap" v-if="sysList.length === 0">
+                    <n-empty size="large" description="暂无系统消息" />
+                </div>
+                <div v-else class="msg-list">
+                    <div v-for="m in sysList" :key="m.id" class="msg-card">
+                        <message-item :message="m" @send-whisper="onSendWhisper" @reload="reloadSysMessages" />
+                    </div>
+                </div>
+            </div>
+            <infinite-load-more
+                :total-page="sysTotalPage"
+                :no-more="sysNoMore"
+                complete-text="没有更多系统消息了"
+                @load-more="sysNextPage"
+            />
+        </div>
     </div>
 </template>
 
 <script setup lang="ts">
-import { h, ref, onMounted, computed } from 'vue';
-import type { Component } from 'vue';
-import { NIcon, DropdownOption } from 'naive-ui';
-import { useStoreMain } from '@/store/main';
+import { ref, onMounted } from 'vue';
 import { useRoute } from 'vue-router';
-import {
-  LayersOutline as AllIcon,
-  AtOutline as SystemIcon,
-  PaperPlaneOutline as WhisperIcon,
-  PersonAddOutline as RequestingIcon,
-  ChatbubbleEllipsesOutline as UnreadIcon,
-  OptionsOutline as OptionsIcon,
-} from '@vicons/ionicons5';
-import { useStoreUser } from '@/store/user';
+import { useStoreMain } from '@/store/main';
 import { storeToRefs } from 'pinia';
 import { Api } from '@/utils/request';
-import { usePagination } from '@/composables/usePagination';
 import InfiniteLoadMore from '@/components/infinite-load-more.vue';
 
+const route = useRoute();
 const storeMain = useStoreMain();
-const storeUser = useStoreUser();
 const { unreadMsgCount } = storeToRefs(storeMain);
 
-const route = useRoute();
-const { loading, noMore, page, pageSize, totalPage, reset: resetPagination } = usePagination(20);
-// 初始化页码
-page.value = +(route.query.p as string) || 1;
+// Tab state
+type TabKey = 'chat' | 'dm' | 'system';
+const activeTab = ref<TabKey>('chat');
+const tabs = [
+    { key: 'chat' as const, label: '聊天' },
+    { key: 'dm' as const, label: '私信' },
+    { key: 'system' as const, label: '系统消息' },
+];
 
+function switchTab(key: TabKey) {
+    activeTab.value = key;
+}
+
+// === 聊天 Mock数据 ===
+interface ChatConv {
+    id: number;
+    name: string;
+    avatar: string;
+    lastMsg: string;
+    time: string;
+    unread: number;
+}
+
+const chatList = ref<ChatConv[]>([
+    { id: 1, name: '张经理', avatar: '', lastMsg: '好的，明天会议上讨论这个方案', time: '10:32', unread: 2 },
+    { id: 2, name: '李总监', avatar: '', lastMsg: '文件已经发你邮箱了，请查收', time: '09:15', unread: 0 },
+    { id: 3, name: '王主管', avatar: '', lastMsg: '收到，我马上安排', time: '昨天', unread: 1 },
+    { id: 4, name: '赵工程师', avatar: '', lastMsg: '这个bug已经修好了，你测试一下', time: '昨天', unread: 0 },
+    { id: 5, name: '钱设计师', avatar: '', lastMsg: '新版的UI稿你看一下，有问题随时沟通', time: '周三', unread: 0 },
+    { id: 6, name: '孙分析师', avatar: '', lastMsg: '数据报告已经完成，下午汇报', time: '周三', unread: 3 },
+    { id: 7, name: '周秘书', avatar: '', lastMsg: '明天的会议改到下午3点', time: '周一', unread: 0 },
+]);
+
+function openChat(conv: ChatConv) {
+    window.$message?.info('聊天功能开发中，请先使用私信功能');
+}
+
+// === 私信 (whisper + requesting) ===
 const list = ref<Item.MessageProps[]>([]);
-const messageStyle = ref<
-  '所有消息' | '系统消息' | '我的私信' | '好友申请' | '未读消息'
->('所有消息');
-const messageStyleVal = ref<
-  'all' | 'system' | 'whisper' | 'requesting' | 'unread'
->('all');
+const loading = ref(false);
+const noMore = ref(false);
+const page = ref(1);
+const pageSize = ref(20);
+const totalPage = ref(0);
 const showWhisper = ref(false);
 const whisperReceiver = ref<Item.UserInfo>({
-  id: 0,
-  avatar: '',
-  username: '',
-  nickname: '',
-  is_admin: false,
-  is_friend: true,
-  is_following: false,
-  created_on: 0,
-  follows: 0,
-  followings: 0,
-  status: 1,
+    id: 0, avatar: '', username: '', nickname: '',
+    is_admin: false, is_friend: true, is_following: false,
+    created_on: 0, follows: 0, followings: 0, status: 1,
 });
 
-const reset = () => {
-  resetPagination();
-  list.value = [];
-};
+function reset() {
+    page.value = 1;
+    list.value = [];
+}
 
-const renderIcon = (icon: Component) => {
-  return () => {
-    return h(NIcon, null, {
-      default: () => h(icon),
-    });
-  };
-};
-
-const options = computed(() => {
-  let opts: DropdownOption[];
-  switch (messageStyle.value) {
-    case '所有消息':
-      opts = [
-        {
-          label: '系统消息',
-          key: 'system',
-          icon: renderIcon(SystemIcon),
-        },
-        {
-          label: '我的私信',
-          key: 'whisper',
-          icon: renderIcon(WhisperIcon),
-        },
-        {
-          label: '好友申请',
-          key: 'requesting',
-          icon: renderIcon(RequestingIcon),
-        },
-        {
-          label: '未读消息',
-          key: 'unread',
-          icon: renderIcon(UnreadIcon),
-        },
-      ];
-      break;
-    case '系统消息':
-      opts = [
-        {
-          label: '所有消息',
-          key: 'all',
-          icon: renderIcon(AllIcon),
-        },
-        {
-          label: '我的私信',
-          key: 'whisper',
-          icon: renderIcon(WhisperIcon),
-        },
-        {
-          label: '好友申请',
-          key: 'requesting',
-          icon: renderIcon(RequestingIcon),
-        },
-        {
-          label: '未读消息',
-          key: 'unread',
-          icon: renderIcon(UnreadIcon),
-        },
-      ];
-      break;
-    case '我的私信':
-      opts = [
-        {
-          label: '所有消息',
-          key: 'all',
-          icon: renderIcon(AllIcon),
-        },
-        {
-          label: '系统消息',
-          key: 'system',
-          icon: renderIcon(SystemIcon),
-        },
-        {
-          label: '好友申请',
-          key: 'requesting',
-          icon: renderIcon(RequestingIcon),
-        },
-        {
-          label: '未读消息',
-          key: 'unread',
-          icon: renderIcon(UnreadIcon),
-        },
-      ];
-      break;
-    case '好友申请':
-      opts = [
-        {
-          label: '所有消息',
-          key: 'all',
-          icon: renderIcon(AllIcon),
-        },
-        {
-          label: '系统消息',
-          key: 'system',
-          icon: renderIcon(SystemIcon),
-        },
-        {
-          label: '我的私信',
-          key: 'whisper',
-          icon: renderIcon(WhisperIcon),
-        },
-        {
-          label: '未读消息',
-          key: 'unread',
-          icon: renderIcon(UnreadIcon),
-        },
-      ];
-      break;
-    case '未读消息':
-      opts = [
-        {
-          label: '所有消息',
-          key: 'all',
-          icon: renderIcon(AllIcon),
-        },
-        {
-          label: '系统消息',
-          key: 'system',
-          icon: renderIcon(SystemIcon),
-        },
-        {
-          label: '我的私信',
-          key: 'whisper',
-          icon: renderIcon(WhisperIcon),
-        },
-        {
-          label: '好友申请',
-          key: 'requesting',
-          icon: renderIcon(RequestingIcon),
-        },
-      ];
-      break;
-    default:
-      opts = [];
-      break;
-  }
-  return opts;
-});
-
-const handleAction = (
-  item: 'all' | 'system' | 'whisper' | 'requesting' | 'unread',
-) => {
-  switch (item) {
-    case 'all':
-      messageStyle.value = '所有消息';
-      break;
-    case 'system':
-      messageStyle.value = '系统消息';
-      break;
-    case 'whisper':
-      messageStyle.value = '我的私信';
-      break;
-    case 'requesting':
-      messageStyle.value = '好友申请';
-      break;
-    case 'unread':
-      messageStyle.value = '未读消息';
-      break;
-  }
-  messageStyleVal.value = item;
-  reset();
-  loadMessages();
-};
-
-const handleUnreadMessage = () => {
-  handleAction('unread');
-};
-
-const handleReadAll = () => {
-  if (unreadMsgCount.value > 0 && list.value.length > 0) {
-    Api.v1.user.message.post.readall()
-      .then((_res) => {
-        if (messageStyleVal.value != 'unread') {
-          for (let idx in list.value) {
-            list.value[idx].is_read = 1;
-          }
-        } else {
-          list.value = [];
-        }
-        storeMain.updateUnreadMsgCount(0);
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  }
-};
-
-const onSendWhisper = (user: Item.UserInfo) => {
-  whisperReceiver.value = user;
-  showWhisper.value = true;
-};
-
-const whisperSuccess = () => {
-  showWhisper.value = false;
-};
-
-const reloadMessages = () => {
-  reset();
-  loadMessages();
-};
-
-const loadMessages = () => {
-  loading.value = true;
-  Api.v1.user.get.messages({
-    style: messageStyleVal.value,
-    page: page.value,
-    page_size: pageSize.value,
-  })
-    .then((res) => {
-      loading.value = false;
-      if (res.list.length === 0) {
-        noMore.value = true;
-      }
-      if (page.value > 1) {
-        list.value = list.value.concat(res.list);
-      } else {
-        list.value = res.list;
-        window.scrollTo(0, 0);
-      }
-      totalPage.value = Math.ceil(res.pager.total_rows / pageSize.value);
-    })
-    .catch((_err) => {
-      loading.value = false;
-      if (page.value > 1) {
-        page.value--;
-      }
-    });
-};
-const nextPage = () => {
-  if (page.value < totalPage.value || totalPage.value == 0) {
-    noMore.value = false;
-    page.value++;
+function reloadMessages() {
+    reset();
     loadMessages();
-  } else {
-    noMore.value = true;
-  }
+}
+
+function loadMessages() {
+    loading.value = true;
+    // 合并 whispers 和 friend requests
+    Promise.all([
+        Api.v1.user.get.messages({ style: 'whisper', page: page.value, page_size: pageSize.value }),
+        Api.v1.user.get.messages({ style: 'requesting', page: 1, page_size: 50 }),
+    ])
+        .then(([whisperRes, friendRes]: any[]) => {
+            loading.value = false;
+            const combined = [
+                ...(friendRes?.list || []),
+                ...(whisperRes?.list || []),
+            ].sort((a: any, b: any) => b.created_on - a.created_on);
+            if (combined.length === 0 && page.value === 1) {
+                noMore.value = true;
+            }
+            list.value = combined;
+            totalPage.value = Math.ceil((whisperRes?.pager?.total_rows || 0) / pageSize.value);
+        })
+        .catch((_err: any) => {
+            loading.value = false;
+        });
+}
+
+function nextPage() {
+    if (page.value < totalPage.value || totalPage.value === 0) {
+        noMore.value = false;
+        page.value++;
+        loadMessages();
+    } else {
+        noMore.value = true;
+    }
+}
+
+// === 系统消息 ===
+const sysList = ref<Item.MessageProps[]>([]);
+const sysLoading = ref(false);
+const sysNoMore = ref(false);
+const sysPage = ref(1);
+const sysPageSize = ref(20);
+const sysTotalPage = ref(0);
+
+function sysReset() {
+    sysPage.value = 1;
+    sysList.value = [];
+}
+
+function reloadSysMessages() {
+    sysReset();
+    loadSysMessages();
+}
+
+function loadSysMessages() {
+    sysLoading.value = true;
+    Api.v1.user.get.messages({ style: 'system', page: sysPage.value, page_size: sysPageSize.value })
+        .then((res: any) => {
+            sysLoading.value = false;
+            if (res.list.length === 0) {
+                sysNoMore.value = true;
+            }
+            if (sysPage.value > 1) {
+                sysList.value = sysList.value.concat(res.list);
+            } else {
+                sysList.value = res.list;
+                window.scrollTo(0, 0);
+            }
+            sysTotalPage.value = Math.ceil(res.pager.total_rows / sysPageSize.value);
+        })
+        .catch((_err: any) => {
+            sysLoading.value = false;
+        });
+}
+
+function sysNextPage() {
+    if (sysPage.value < sysTotalPage.value || sysTotalPage.value === 0) {
+        sysNoMore.value = false;
+        sysPage.value++;
+        loadSysMessages();
+    } else {
+        sysNoMore.value = true;
+    }
+}
+
+// === Whisper ===
+const onSendWhisper = (user: Item.UserInfo) => {
+    whisperReceiver.value = user;
+    showWhisper.value = true;
 };
+const whisperSuccess = () => {
+    showWhisper.value = false;
+};
+
 onMounted(() => {
-  loadMessages();
+    const tab = route.query.tab as string;
+    if (tab === 'chat' || tab === 'dm' || tab === 'system') {
+        activeTab.value = tab;
+    }
+    loadMessages();
+    loadSysMessages();
 });
 </script>
 
 <style lang="less" scoped>
-.title {
-    padding-top: 4px;
-    opacity: 0.9;
+// Tab栏
+.msg-tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border-color, #eff3f4);
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
 }
-.title-action {
+
+.msg-tab {
+    flex: 1;
+    text-align: center;
+    padding: 14px 0;
+    font-size: 15px;
+    font-weight: 500;
+    color: #666;
+    cursor: pointer;
+    position: relative;
+    transition: color 0.2s;
+
+    &:hover { color: #18a058; }
+
+    &.active {
+        color: #18a058;
+        font-weight: 700;
+        &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 36px;
+            height: 3px;
+            background: #18a058;
+            border-radius: 2px;
+        }
+    }
+}
+
+.tab-badge {
+    margin-left: 4px;
+}
+
+// 聊天列表
+.chat-list {
+    min-height: 60vh;
+}
+
+.chat-item {
     display: flex;
     align-items: center;
-    margin-left: 20px;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--border-color, #eff3f4);
+    cursor: pointer;
+    transition: background 0.15s;
+
+    &:hover { background: #f7f9f9; }
 }
-.title-filter {
-    margin-right: 20px;
+
+.chat-info {
+    flex: 1;
+    min-width: 0;
 }
+
+.chat-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.chat-name {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.chat-time {
+    font-size: 12px;
+    color: #999;
+    flex-shrink: 0;
+}
+
+.chat-last {
+    font-size: 13px;
+    color: #999;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: block;
+}
+
+// 消息列表
+.msg-list {
+    min-height: 60vh;
+}
+
+.msg-card {
+    border-bottom: 1px solid var(--border-color, #eff3f4);
+}
+
+.empty-wrap {
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.skeleton-wrap {
+    padding: 12px 16px;
+}
+
 .dark {
-    .empty-wrap {
-        background-color: rgba(16, 16, 20, 0.75);
+    .msg-tabs {
+        background: rgba(16, 16, 20, 0.85);
+        border-bottom-color: #2f3336;
     }
-    .messages-wrap, .pagination-wrap {
-        background-color: rgba(16, 16, 20, 0.75);
+    .chat-item {
+        border-bottom-color: #2f3336;
+        &:hover { background: #080808; }
+    }
+    .msg-card {
+        border-bottom-color: #2f3336;
     }
 }
 </style>

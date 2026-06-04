@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="钱包" />
 
         <n-list class="main-content-wrap" bordered>
             <div class="balance-wrap">

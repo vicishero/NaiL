@@ -1,162 +1,164 @@
 <template>
-    <div class="detail-item" @click="goPostDetail(post.id)">
-        <n-thing>
-            <template #avatar>
-                <n-avatar round :size="30" :src="post.user.avatar" />
-            </template>
-            <template #header>
-                <router-link
-                    @click.stop
-                    class="username-link"
-                    :to="{
-                        name: 'user',
-                        query: { s: post.user.username },
-                    }"
-                >
-                    {{ post.user.nickname }}
-                </router-link>
-                <span class="username-wrap"> @{{ post.user.username }} </span>
-                <n-tag
-                    v-if="post.is_top"
-                    class="top-tag"
-                    type="warning"
-                    size="small"
-                    round
-                >
-                    置顶
-                </n-tag>
-                <n-tag
-                    v-if="post.visibility == VisibilityEnum.PRIVATE"
-                    class="top-tag"
-                    type="error"
-                    size="small"
-                    round
-                >
-                    私密
-                </n-tag>
-                <n-tag
-                    v-if="post.visibility == VisibilityEnum.FRIEND"
-                    class="top-tag"
-                    type="info"
-                    size="small"
-                    round
-                >
-                    好友可见
-                </n-tag>
-            </template>
-            <template #header-extra>
-                <div class="options">
-                    <n-dropdown
-                        placement="bottom-end"
-                        trigger="click"
-                        size="small"
-                        :options="adminOptions"
-                        @select="handlePostAction"
-                    >
-                        <n-button quaternary circle>
-                            <template #icon>
-                                <n-icon>
-                                    <more-horiz-filled />
-                                </n-icon>
-                            </template>
-                        </n-button>
-                    </n-dropdown>
-                </div>
+    <article class="detail-item" @click="goPostDetail(post.id)">
+        <!-- 删除确认 -->
+        <n-modal
+            v-model:show="showDelModal"
+            :mask-closable="false"
+            preset="dialog"
+            title="提示"
+            content="确定删除该泡泡动态吗？"
+            positive-text="确认"
+            negative-text="取消"
+            @positive-click="execDelAction"
+        />
+        <!-- 锁定确认 -->
+        <n-modal
+            v-model:show="showLockModal"
+            :mask-closable="false"
+            preset="dialog"
+            title="提示"
+            :content="
+                '确定' +
+                (post.is_lock ? '解锁' : '锁定') +
+                '该泡泡动态吗？'
+            "
+            positive-text="确认"
+            negative-text="取消"
+            @positive-click="execLockAction"
+        />
+        <!-- 置顶确认 -->
+        <n-modal
+            v-model:show="showStickModal"
+            :mask-closable="false"
+            preset="dialog"
+            title="提示"
+            :content="
+                '确定' +
+                (post.is_top ? '取消置顶' : '置顶') +
+                '该泡泡动态吗？'
+            "
+            positive-text="确认"
+            negative-text="取消"
+            @positive-click="execStickAction"
+        />
+        <!-- 亮点确认 -->
+        <n-modal
+            v-model:show="showHighlightModal"
+            :mask-closable="false"
+            preset="dialog"
+            title="提示"
+            :content="
+                '确定将该泡泡动态' +
+                (post.is_essence ? '取消亮点' : '设为亮点') +
+                '吗？'
+            "
+            positive-text="确认"
+            negative-text="取消"
+            @positive-click="execHighlightAction"
+        />
+        <!-- 修改可见度确认 -->
+        <n-modal
+            v-model:show="showVisibilityModal"
+            :mask-closable="false"
+            preset="dialog"
+            title="提示"
+            :content="
+                '确定将该泡泡动态可见度修改为' +
+                (tempVisibility == 0 ? '公开' : (tempVisibility == 1 ? '私密' : (tempVisibility == 2 ? '好友可见' : '关注可见'))) +
+                '吗？'
+            "
+            positive-text="确认"
+            negative-text="取消"
+            @positive-click="execVisibilityAction"
+        />
+        <!-- 私信组件 -->
+        <whisper :show="showWhisper" :user="whisperReceiver" @success="whisperSuccess" />
 
-                <!-- 删除确认 -->
-                <n-modal
-                    v-model:show="showDelModal"
-                    :mask-closable="false"
-                    preset="dialog"
-                    title="提示"
-                    content="确定删除该泡泡动态吗？"
-                    positive-text="确认"
-                    negative-text="取消"
-                    @positive-click="execDelAction"
-                />
-                <!-- 锁定确认 -->
-                <n-modal
-                    v-model:show="showLockModal"
-                    :mask-closable="false"
-                    preset="dialog"
-                    title="提示"
-                    :content="
-                        '确定' +
-                        (post.is_lock ? '解锁' : '锁定') +
-                        '该泡泡动态吗？'
-                    "
-                    positive-text="确认"
-                    negative-text="取消"
-                    @positive-click="execLockAction"
-                />
-                <!-- 置顶确认 -->
-                <n-modal
-                    v-model:show="showStickModal"
-                    :mask-closable="false"
-                    preset="dialog"
-                    title="提示"
-                    :content="
-                        '确定' +
-                        (post.is_top ? '取消置顶' : '置顶') +
-                        '该泡泡动态吗？'
-                    "
-                    positive-text="确认"
-                    negative-text="取消"
-                    @positive-click="execStickAction"
-                />
-                <!-- 亮点确认 -->
-                <n-modal
-                    v-model:show="showHighlightModal"
-                    :mask-closable="false"
-                    preset="dialog"
-                    title="提示"
-                    :content="
-                        '确定将该泡泡动态' +
-                        (post.is_essence ? '取消亮点' : '设为亮点') +
-                        '吗？'
-                    "
-                    positive-text="确认"
-                    negative-text="取消"
-                    @positive-click="execHighlightAction"
-                />
-                <!-- 修改可见度确认 -->
-                <n-modal
-                    v-model:show="showVisibilityModal"
-                    :mask-closable="false"
-                    preset="dialog"
-                    title="提示"
-                    :content="
-                        '确定将该泡泡动态可见度修改为' +
-                        (tempVisibility == 0 ? '公开' : (tempVisibility == 1 ? '私密' : (tempVisibility == 2 ? '好友可见' : '关注可见'))) +
-                        '吗？'
-                    "
-                    positive-text="确认"
-                    negative-text="取消"
-                    @positive-click="execVisibilityAction"
-                />
-                  <!-- 私信组件 -->
-                <whisper :show="showWhisper" :user="whisperReceiver" @success="whisperSuccess" />
-            </template>
-            <div v-if="post.texts.length > 0">
-                <span
-                    v-for="content in post.texts"
-                    :key="content.id"
-                    class="post-text"
-                    @click.stop="doClickText($event, post.id)"
-                    v-html="parsePostTag(content.content).content"
-                >
-                </span>
+        <div class="post-layout">
+            <!-- 左侧头像 -->
+            <div class="post-avatar" @click.stop="goUserProfile">
+                <n-avatar round :size="48" :src="post.user.avatar" />
             </div>
 
-            <template #footer>
-                <post-attachment :attachments="post.attachments" />
-                <post-attachment
-                    :attachments="post.charge_attachments"
-                    :price="post.attachment_price"
-                />
-                <post-image :imgs="post.imgs" />
-                <post-video :videos="post.videos" :full="true" />
-                <post-link :links="post.links" />
+            <!-- 右侧内容 -->
+            <div class="post-body">
+                <!-- 头部 -->
+                <div class="post-header">
+                    <div class="post-header-left">
+                        <span class="nickname" @click.stop="goUserProfile">
+                            {{ post.user.nickname }}
+                        </span>
+                        <span class="username">@{{ post.user.username }}</span>
+                        <n-tag
+                            v-if="post.is_top"
+                            class="badge-tag"
+                            type="warning"
+                            size="tiny"
+                            round
+                        >
+                            置顶
+                        </n-tag>
+                        <n-tag
+                            v-if="post.visibility == VisibilityEnum.PRIVATE"
+                            class="badge-tag"
+                            type="error"
+                            size="tiny"
+                            round
+                        >
+                            私密
+                        </n-tag>
+                        <n-tag
+                            v-if="post.visibility == VisibilityEnum.FRIEND"
+                            class="badge-tag"
+                            type="info"
+                            size="tiny"
+                            round
+                        >
+                            好友可见
+                        </n-tag>
+                    </div>
+                    <div class="options">
+                        <n-dropdown
+                            placement="bottom-end"
+                            trigger="click"
+                            size="small"
+                            :options="adminOptions"
+                            @select="handlePostAction"
+                        >
+                            <n-button quaternary circle size="tiny">
+                                <template #icon>
+                                    <n-icon :size="18"><more-horiz-filled /></n-icon>
+                                </template>
+                            </n-button>
+                        </n-dropdown>
+                    </div>
+                </div>
+
+                <!-- 正文内容 -->
+                <div v-if="post.texts.length > 0" class="post-content">
+                    <span
+                        v-for="content in post.texts"
+                        :key="content.id"
+                        class="post-text"
+                        @click.stop="doClickText($event, post.id)"
+                        v-html="parsePostTag(content.content).content"
+                    >
+                    </span>
+                </div>
+
+                <!-- 附件/图片/视频/链接 -->
+                <div class="post-media">
+                    <post-attachment :attachments="post.attachments" />
+                    <post-attachment
+                        :attachments="post.charge_attachments"
+                        :price="post.attachment_price"
+                    />
+                    <post-image :imgs="post.imgs" />
+                    <post-video :videos="post.videos" :full="true" />
+                    <post-link :links="post.links" />
+                </div>
+
+                <!-- 时间戳 -->
                 <div class="timestamp">
                     发布于 {{ formatPrettyTime(post.created_on) }}
                     <span v-if="post.ip_loc">
@@ -168,50 +170,24 @@
                         {{ formatPrettyTime(post.latest_replied_on) }}
                     </span>
                 </div>
-            </template>
-            <template #action>
-                <div class="opts-wrap">
-                    <n-space justify="space-between">
-                        <div
-                            class="opt-item hover"
-                            @click.stop="handlePostStar"
-                        >
-                            <n-icon size="20" class="opt-item-icon">
-                                <heart-outline v-if="!hasStarred" />
-                                <heart v-if="hasStarred" color="red" />
-                            </n-icon>
-                            {{ post.upvote_count }}
-                        </div>
-                        <div class="opt-item">
-                            <n-icon size="20" class="opt-item-icon">
-                                <chatbox-outline />
-                            </n-icon>
-                            {{ post.comment_count }}
-                        </div>
-                        <div
-                            class="opt-item hover"
-                            @click.stop="handlePostCollection"
-                        >
-                            <n-icon size="20" class="opt-item-icon">
-                                <bookmark-outline v-if="!hasCollected" />
-                                <bookmark v-if="hasCollected" color="#ff7600" />
-                            </n-icon>
-                            {{ post.collection_count }}
-                        </div>
-                        <div
-                            class="opt-item hover"
-                            @click.stop="handlePostShare"
-                        >
-                            <n-icon size="20" class="opt-item-icon">
-                                <share-social-outline />
-                            </n-icon>
-                            {{ post.share_count }}
-                        </div>
-                    </n-space>
-                </div>
-            </template>
-        </n-thing>
-    </div>
+
+                <!-- 操作栏 -->
+                <post-action-bar
+                    :comment-count="post.comment_count"
+                    :repost-count="post.share_count || 0"
+                    :like-count="post.upvote_count"
+                    :bookmark-count="post.collection_count"
+                    :is-liked="hasStarred"
+                    :is-bookmarked="hasCollected"
+                    @comment="goPostDetail(post.id)"
+                    @repost="handlePostShare"
+                    @like="handlePostStar"
+                    @bookmark="handlePostCollection"
+                    @share="handlePostShare"
+                />
+            </div>
+        </div>
+    </article>
 </template>
 
 <script setup lang="ts">
@@ -261,6 +237,7 @@ import { useStoreUser } from '@/store/user';
 import { Api } from '@/utils/request';
 import UserAction from '@/composables/useUserAction';
 import { usePostContent } from '@/composables/usePostContent';
+import PostActionBar from '@/components/post-action-bar.vue';
 
 const useFriendship =
   import.meta.env.VITE_USE_FRIENDSHIP.toLowerCase() === 'true';
@@ -464,6 +441,14 @@ const goPostDetail = (id: string) => {
     name: 'post',
     query: {
       id,
+    },
+  });
+};
+const goUserProfile = () => {
+  router.push({
+    name: 'user',
+    query: {
+      s: post.value.user.username,
     },
   });
 };
@@ -709,61 +694,109 @@ onMounted(() => {
 });
 </script>
 
-<style lang="less">
+<style lang="less" scoped>
 .detail-item {
     width: 100%;
     padding: 16px;
     box-sizing: border-box;
+    border-bottom: 1px solid var(--border-color, #eff3f4);
+}
 
-    background: #f7f9f9;
-    .nickname-wrap {
-        font-size: 14px;
-    }
-    .username-wrap {
-        font-size: 14px;
-        opacity: 0.75;
-    }
-    .top-tag {
-        transform: scale(0.75);
-    }
-    .options {
-        opacity: 0.75;
-    }
-    .post-text {
-        font-size: 16px;
-        text-align: justify;
-        overflow: hidden;
-        white-space: pre-wrap;
-        word-break: break-all;
-    }
-    .opts-wrap {
-        margin-top: 20px;
-        .opt-item {
-            display: flex;
-            align-items: center;
-            opacity: 0.7;
-            .opt-item-icon {
-                margin-right: 10px;
-            }
-            &.hover {
-                cursor: pointer;
-            }
-        }
-    }
-    .n-thing {
-        .n-thing-avatar-header-wrapper {
-            align-items: center;
-        }
-    }
-    .timestamp {
-        opacity: 0.75;
-        font-size: 12px;
-        margin-top: 10px;
+.post-layout {
+    display: flex;
+    gap: 12px;
+}
+
+.post-avatar {
+    flex-shrink: 0;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.85;
     }
 }
+
+.post-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.post-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.post-header-left {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 15px;
+    line-height: 20px;
+}
+
+.nickname {
+    font-weight: 700;
+    cursor: pointer;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.username {
+    color: #888;
+    font-size: 15px;
+}
+
+.badge-tag {
+    transform: scale(0.75);
+    transform-origin: left center;
+}
+
+.options {
+    flex-shrink: 0;
+    color: #888;
+}
+
+.post-content {
+    margin-top: 8px;
+}
+
+.post-text {
+    font-size: 17px;
+    text-align: justify;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.6;
+}
+
+.post-media {
+    margin-top: 12px;
+}
+
+.timestamp {
+    opacity: 0.6;
+    font-size: 13px;
+    margin-top: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color, #eff3f4);
+}
+
 .dark {
     .detail-item {
-        background: #18181c;
+        border-bottom-color: #2f3336;
+    }
+
+    .username {
+        color: #999;
+    }
+
+    .timestamp {
+        border-bottom-color: #2f3336;
     }
 }
 </style>

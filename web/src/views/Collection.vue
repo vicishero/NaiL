@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="收藏" />
 
         <n-list class="main-content-wrap" bordered>
             <div v-if="loading && list.length === 0" class="skeleton-wrap">

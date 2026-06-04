@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="404" />
 
         <n-list class="main-content-wrap wrap404" bordered>
             <n-result

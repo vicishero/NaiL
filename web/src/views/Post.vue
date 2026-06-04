@@ -1,6 +1,5 @@
 <template>
     <div>
-        <main-nav title="泡泡详情" :back="true" />
 
         <n-list class="main-content-wrap" bordered>
             <n-list-item>
