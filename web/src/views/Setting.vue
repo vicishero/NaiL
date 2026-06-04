@@ -8,26 +8,53 @@
                     :size="80"
                     :src="userInfo.avatar"
                 />
-                <n-upload
-                    v-if="!profile.allowPhoneBind || (
-                        profile.allowPhoneBind &&
-                        userInfo.phone &&
-                        userInfo.phone.length > 0)
-                    "
-                    ref="avatarRef"
-                    :action="uploadGateway"
-                    :headers="{
-                        Authorization: uploadToken,
-                    }"
-                    :data="{
-                        type: uploadType,
-                    }"
-                    @before-upload="beforeUpload"
-                    @finish="finishUpload"
-                >
-                    <n-button size="small">更改头像</n-button>
-                </n-upload>
+                <n-button size="small" @click="triggerFileInput">更改头像</n-button>
+                <input
+                    ref="fileInputRef"
+                    type="file"
+                    accept="image/png,image/jpg,image/jpeg"
+                    style="display: none"
+                    @change="onFileSelected"
+                />
             </div>
+            <!-- 头像裁剪弹窗 -->
+            <n-modal
+                v-model:show="showCropper"
+                preset="card"
+                title="裁剪头像"
+                style="width: 560px"
+                :mask-closable="false"
+                @after-leave="resetCropper"
+            >
+                <div class="cropper-container">
+                    <vue-cropper
+                        v-if="cropperSrc"
+                        ref="cropperRef"
+                        :src="cropperSrc"
+                        :aspect-ratio="1"
+                        :view-mode="2"
+                        :auto-crop-area="1"
+                        :guides="true"
+                        :background="true"
+                        :rotatable="true"
+                        :scalable="true"
+                        :zoomable="true"
+                        :zoom-on-touch="true"
+                        :zoom-on-wheel="true"
+                        :crop-box-movable="true"
+                        :crop-box-resizable="true"
+                        :min-crop-box-width="256"
+                        :min-crop-box-height="256"
+                        @ready="onCropperReady"
+                    />
+                </div>
+                <template #footer>
+                    <div class="cropper-footer">
+                        <n-button quaternary round @click="showCropper = false">取消</n-button>
+                        <n-button type="primary" round :loading="cropping" @click="handleCrop">确认</n-button>
+                    </div>
+                </template>
+            </n-modal>
             <div class="base-line">
                 <span class="base-label">昵称</span>
                 <div v-if="!showNicknameEdit">
@@ -49,13 +76,7 @@
                     round
                     type="success"
                     size="small"
-                    v-if="!showNicknameEdit && (!profile.allowPhoneBind || (
-                        profile.allowPhoneBind &&
-                        userInfo.phone &&
-                        userInfo.phone.length > 0 &&
-                        userInfo.status == 1)
-                    )
-                    "
+                    v-if="!showNicknameEdit && userInfo.status == 1"
                     @click="handleNicknameShow"
                 >
                     <template #icon>
@@ -69,114 +90,6 @@
                 <span class="base-label">用户名</span> @{{
                     userInfo.username
                 }}
-            </div>
-        </n-card>
-
-        <n-card v-if="profile.allowPhoneBind" title="手机号" size="small" class="setting-card">
-            <div
-                v-if="
-                    userInfo.phone &&
-                    userInfo.phone.length > 0
-                "
-            >
-                {{ userInfo.phone }}
-
-                <n-button
-                    quaternary
-                    round
-                    type="success"
-                    v-if="!showPhoneBind && userInfo.status == 1"
-                    @click="showPhoneBind = true"
-                >
-                    换绑手机
-                </n-button>
-            </div>
-            <div v-else>
-                <n-alert title="手机绑定提示" type="warning">
-                    成功绑定手机后，才能进行换头像、发动态、回复等交互~<br />
-                    <a
-                        class="hash-link"
-                        @click="showPhoneBind = true"
-                        v-if="!showPhoneBind"
-                    >
-                        立即绑定
-                    </a>
-                </n-alert>
-            </div>
-
-            <div class="phone-bind-wrap" v-if="showPhoneBind">
-                <n-form
-                    ref="phoneFormRef"
-                    :model="modelData"
-                    :rules="bindRules"
-                >
-                    <n-form-item path="phone" label="手机号">
-                        <n-input
-                            :value="modelData.phone"
-                            @update:value="(v: string) => (modelData.phone = v.trim())"
-                            placeholder="请输入中国大陆手机号"
-                            @keydown.enter.prevent
-                        />
-                    </n-form-item>
-                    <n-form-item path="img_captcha" label="图形验证码">
-                        <div class="captcha-img-wrap">
-                            <n-input
-                                v-model:value="modelData.imgCaptcha"
-                                placeholder="请输入图形验证码后获取验证码"
-                            />
-                            <div class="captcha-img">
-                                <img
-                                    v-if="modelData.b64s"
-                                    :src="modelData.b64s"
-                                    @click="loadCaptcha"
-                                />
-                            </div>
-                        </div>
-                    </n-form-item>
-                    <n-form-item path="phone_captcha" label="短信验证码">
-                        <n-input-group>
-                            <n-input
-                                v-model:value="modelData.phone_captcha"
-                                placeholder="请输入收到的短信验证码"
-                            />
-                            <n-button
-                                type="primary"
-                                ghost
-                                :disabled="smsDisabled"
-                                :loading="sending"
-                                @click="sendPhoneCaptcha"
-                            >
-                                {{
-                                    smsCounter > 0 && smsDisabled
-                                        ? smsCounter + 's后重新发送'
-                                        : '发送验证码'
-                                }}
-                            </n-button>
-                        </n-input-group>
-                    </n-form-item>
-                    <n-row :gutter="[0, 24]">
-                        <n-col :span="24">
-                            <div class="form-submit-wrap">
-                                <n-button
-                                    quaternary
-                                    round
-                                    @click="showPhoneBind = false"
-                                >
-                                    取消
-                                </n-button>
-                                <n-button
-                                    secondary
-                                    round
-                                    type="primary"
-                                    :loading="binding"
-                                    @click="handlePhoneBind"
-                                >
-                                    绑定
-                                </n-button>
-                            </div>
-                        </n-col>
-                    </n-row>
-                </n-form>
             </div>
         </n-card>
 
@@ -344,51 +257,38 @@ import { onMounted, ref, reactive } from 'vue';
 import { useStoreMain } from '@/store/main';
 import { Edit } from '@vicons/tabler';
 import type {
-  UploadInst,
   FormItemRule,
   FormItemInst,
   FormInst,
   InputInst,
 } from 'naive-ui';
 import { TOKEN_KEY, useStoreUser } from '@/store/user';
-import { useStoreProfile } from '@/store/profile';
 import { storeToRefs } from 'pinia';
 import { Api } from '@/utils/request';
+import VueCropper from 'vue-cropperjs';
 
-const uploadGateway = import.meta.env.VITE_HOST + '/v1/attachment';
-const uploadToken = 'Bearer ' + localStorage.getItem(TOKEN_KEY);
-const uploadType = ref('public/avatar');
 const allowActivation =
   import.meta.env.VITE_ALLOW_ACTIVATION.toLowerCase() === 'true';
 
 const storeMain = useStoreMain();
 const storeUser = useStoreUser();
-const storeProfile = useStoreProfile();
 const { userInfo } = storeToRefs(storeUser);
-const { profile } = storeToRefs(storeProfile);
 
-const sending = ref(false);
-const binding = ref(false);
 const activating = ref(false);
-const avatarRef = ref<UploadInst>();
+const fileInputRef = ref<HTMLInputElement>();
+const cropperRef = ref<any>();
 const inputInstRef = ref<InputInst>();
 const showNicknameEdit = ref(false);
+const showCropper = ref(false);
+const cropperSrc = ref('');
+const cropping = ref(false);
 const passwordSetting = ref(false);
 const showPasswordSetting = ref(false);
-const smsDisabled = ref(false);
-const smsCounter = ref(60);
-const showPhoneBind = ref(false);
 const showActivation = ref(false);
-const phoneFormRef = ref<FormInst>();
 const activateFormRef = ref<FormInst>();
 const formRef = ref<FormInst>();
 const rPasswordFormItemRef = ref<FormItemInst>();
 const modelData = reactive({
-  id: '',
-  b64s: '',
-  imgCaptcha: '',
-  phone: '',
-  phone_captcha: '',
   password: '',
   old_password: '',
   reenteredPassword: '',
@@ -401,50 +301,111 @@ const activateData = reactive({
   activate_code: '',
 });
 
-const beforeUpload = async (data: any) => {
-  // 图片类型校验
-  if (
-    uploadType.value === 'public/avatar' &&
-    !['image/png', 'image/jpg', 'image/jpeg'].includes(data.file.file?.type)
-  ) {
-    window.$message.warning('头像仅允许 png/jpg 格式');
-    return false;
-  }
-
-  if (uploadType.value === 'image' && data.file.file?.size > 1048576) {
-    window.$message.warning('头像大小不能超过1MB');
-    return false;
-  }
-
-  return true;
+// 触发文件选择
+const triggerFileInput = () => {
+  fileInputRef.value?.click();
 };
 
-const finishUpload = ({ file, event }: any): any => {
+// 文件选择后打开裁剪弹窗
+const onFileSelected = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+
+  // 校验图片类型
+  if (!['image/png', 'image/jpg', 'image/jpeg'].includes(file.type)) {
+    window.$message.warning('头像仅允许 png/jpg 格式');
+    return;
+  }
+
+  // 校验图片大小
+  if (file.size > 5 * 1024 * 1024) {
+    window.$message.warning('图片大小不能超过5MB');
+    return;
+  }
+
+  // 读取为 data URL，打开裁剪弹窗
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    cropperSrc.value = ev.target?.result as string;
+    showCropper.value = true;
+  };
+  reader.readAsDataURL(file);
+
+  // 清空 input 以便重复选择同一文件
+  input.value = '';
+};
+
+// 裁剪确认，裁剪后上传
+const handleCrop = async () => {
+  cropping.value = true;
   try {
-    let data = JSON.parse(event.target?.response);
+    const canvas = cropperRef.value?.getCroppedCanvas({
+      width: 256,
+      height: 256,
+    });
+    if (!canvas) {
+      window.$message.error('裁剪失败');
+      cropping.value = false;
+      return;
+    }
+
+    const blob = await new Promise<Blob>((resolve) => {
+      canvas.toBlob(resolve as BlobCallback, 'image/png');
+    });
+
+    // 上传裁剪后的图片到 attachment 接口
+    const formData = new FormData();
+    formData.append('type', 'public/avatar');
+    formData.append('file', blob, 'avatar.png');
+
+    const token = 'Bearer ' + localStorage.getItem(TOKEN_KEY);
+    const uploadUrl = import.meta.env.VITE_HOST + '/v1/attachment';
+
+    const response = await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { Authorization: token },
+      body: formData,
+    });
+    const data = await response.json();
 
     if (data.code === 0) {
-      if (uploadType.value === 'public/avatar') {
-        Api.v1.user.post.avatar({
-          avatar: data.data.content,
-        })
-          .then((res) => {
-            window.$message.success('头像更新成功');
-            avatarRef.value?.clear();
-
-            storeUser.updateUserinfo({
-              ...userInfo.value,
-              avatar: data.data.content,
-            });
-          })
-          .catch((err) => {
-            console.log(err);
-          });
-      }
+      // 更新用户头像
+      await Api.v1.user.post.avatar({
+        avatar: data.data.content,
+      });
+      window.$message.success('头像更新成功');
+      storeUser.updateUserinfo({
+        ...userInfo.value,
+        avatar: data.data.content,
+      });
+      showCropper.value = false;
+    } else {
+      window.$message.error(data.msg || '上传失败');
     }
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
     window.$message.error('上传失败');
+  } finally {
+    cropping.value = false;
   }
+};
+
+// 关闭裁剪弹窗后清理
+const resetCropper = () => {
+  cropperSrc.value = '';
+};
+
+// cropper 初始化完成后，将选择框默认设为 256x256 并居中
+const onCropperReady = () => {
+  const cropper = cropperRef.value;
+  if (!cropper) return;
+  const container = cropper.getContainerData();
+  // 如果容器小于 256，则填满容器
+  const size = Math.min(256, container.width, container.height);
+  const left = (container.width - size) / 2;
+  const top = (container.height - size) / 2;
+  cropper.setCropBoxData({ left, top, width: size, height: size });
 };
 
 const validatePasswordStartWith = (rule: FormItemRule, value: any) => {
@@ -491,38 +452,6 @@ const handleValidateButtonClick = (e: MouseEvent) => {
   });
 };
 
-const handlePhoneBind = (e: MouseEvent) => {
-  e.preventDefault();
-  phoneFormRef.value?.validate((errors) => {
-    if (!errors) {
-      binding.value = true;
-      Api.v1.user.post.phone({
-        phone: modelData.phone,
-        captcha: modelData.phone_captcha,
-      })
-        .then((res) => {
-          binding.value = false;
-          showPhoneBind.value = false;
-          window.$message.success('绑定成功');
-
-          storeUser.updateUserinfo({
-            ...userInfo.value,
-            phone: modelData.phone,
-          });
-
-          modelData.id = '';
-          modelData.b64s = '';
-          modelData.imgCaptcha = '';
-          modelData.phone = '';
-          modelData.phone_captcha = '';
-        })
-        .catch((err) => {
-          binding.value = false;
-        });
-    }
-  });
-};
-
 const handleActivation = (e: MouseEvent) => {
   e.preventDefault();
   activateFormRef.value?.validate((errors) => {
@@ -530,7 +459,6 @@ const handleActivation = (e: MouseEvent) => {
       window.$message.warning('请输入图片验证码');
       return;
     }
-    sending.value = true;
     if (!errors) {
       activating.value = true;
       Api.v1.user.post.activate({
@@ -563,17 +491,6 @@ const handleActivation = (e: MouseEvent) => {
   });
 };
 
-const loadCaptcha = () => {
-  Api.v1.captcha.get._self({})
-    .then((res) => {
-      modelData.id = res.id;
-      modelData.b64s = res.b64s;
-    })
-    .catch((err) => {
-      console.log(err);
-    });
-};
-
 const loadCaptcha4Activate = () => {
   Api.v1.captcha.get._self({})
     .then((res) => {
@@ -598,61 +515,6 @@ const handleNicknameChange = () => {
     });
 };
 
-const sendPhoneCaptcha = () => {
-  if (smsCounter.value > 0 && smsDisabled.value) {
-    return;
-  }
-  if (modelData.imgCaptcha === '') {
-    window.$message.warning('请输入图片验证码');
-    return;
-  }
-  sending.value = true;
-  Api.v1.captcha.post._self({
-    phone: modelData.phone,
-    img_captcha: modelData.imgCaptcha,
-    img_captcha_id: modelData.id,
-  })
-    .then((res) => {
-      smsDisabled.value = true;
-      sending.value = false;
-      window.$message.success('发送成功');
-
-      let s = setInterval(() => {
-        smsCounter.value--;
-        if (smsCounter.value === 0) {
-          clearInterval(s);
-          smsCounter.value = 60;
-          smsDisabled.value = false;
-        }
-      }, 1000);
-    })
-    .catch((err) => {
-      sending.value = false;
-      if (err.code === 20012) {
-        loadCaptcha();
-      }
-      console.log(err);
-    });
-};
-
-const bindRules = {
-  phone: [
-    {
-      required: true,
-      message: '请输入手机号',
-      trigger: ['input'],
-      validator: (rule: FormItemRule, value: any) => {
-        return /^[1]+[3-9]{1}\d{9}$/.test(value);
-      },
-    },
-  ],
-  phone_captcha: [
-    {
-      required: true,
-      message: '请输入手机验证码',
-    },
-  ],
-};
 const activateRules = {
   activate_code: [
     {
@@ -707,10 +569,13 @@ onMounted(() => {
     storeMain.triggerAuth(true);
     storeMain.triggerAuthKey('signin');
   }
-  loadCaptcha();
   loadCaptcha4Activate();
 });
 </script>
+
+<style>
+@import 'cropperjs/dist/cropper.css';
+</style>
 
 <style lang="less" scoped>
 .setting-card {
@@ -770,6 +635,20 @@ onMounted(() => {
             }
         }
     }
+}
+.cropper-container {
+    max-width: 100%;
+    max-height: 60vh;
+    overflow: hidden;
+    .cropper-crop-box,
+    .cropper-view-box {
+        border-radius: 50%;
+    }
+}
+.cropper-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
 }
 .dark {
     .setting-card {

@@ -68,6 +68,7 @@ More screenshots and live behavior are available at [PaoPao](https://paopao-demo
 | --- | --- |
 | Backend | Go, Gin, Cobra, GORM, Mir |
 | Web frontend | Vue 3, Vite, Naive UI |
+| Admin frontend | Vue 3 |
 | Desktop client | Tauri |
 | Search | Meilisearch |
 | Cache | Redis |
