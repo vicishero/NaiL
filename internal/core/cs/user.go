@@ -36,6 +36,7 @@ type UserInfo struct {
 	Status    int    `json:"status"`
 	Avatar    string `json:"avatar"`
 	IsAdmin   bool   `json:"is_admin"`
+	IsKOL     bool   `json:"is_kol"`
 	CreatedOn int64  `json:"created_on"`
 }
 
@@ -48,6 +49,8 @@ type UserProfile struct {
 	Avatar      string `json:"avatar"`
 	Balance     int64  `json:"balance"`
 	IsAdmin     bool   `json:"is_admin"`
+	IsKOL       bool   `json:"is_kol"`
+	Address     string `json:"address"`
 	CreatedOn   int64  `json:"created_on"`
 	TweetsCount int    `json:"tweets_count"`
 }

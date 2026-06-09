@@ -12,6 +12,9 @@ type DataService interface {
 	// 消息服务
 	MessageService
 
+	// 系统通知服务
+	NoticeService
+
 	// 话题服务
 	TopicService
 

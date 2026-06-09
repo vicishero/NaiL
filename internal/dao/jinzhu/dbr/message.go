@@ -130,6 +130,6 @@ func (m *Message) Count(db *gorm.DB, userId int64) (res int64, err error) {
 }
 
 func (m *Message) CountUnread(db *gorm.DB, userId int64) (res int64, err error) {
-	err = db.Model(m).Where("receiver_user_id=? AND is_read=0", userId).Count(&res).Error
+	err = db.Model(m).Where("(receiver_user_id=? OR receiver_user_id=0) AND is_read=0", userId).Count(&res).Error
 	return
 }

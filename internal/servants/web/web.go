@@ -32,6 +32,7 @@ var (
 // RouteWeb register web route
 func RouteWeb(e *gin.Engine) {
 	lazyInitial()
+	registerExploreRoute(e)
 	ds := base.NewDaoServant()
 	// aways register servants
 	api.RegisterAdminServant(e, newAdminSrv(ds, _wc, _siteSettings))

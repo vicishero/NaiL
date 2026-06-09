@@ -14,7 +14,6 @@
                         <span class="nickname" @click.stop="goUserProfile">
                             {{ post.user.nickname }}
                         </span>
-                        <span class="username">@{{ post.user.username }}</span>
                         <span class="dot">·</span>
                         <span class="timestamp">{{ formatPrettyDate(post.created_on) }}</span>
                         <n-tag
@@ -186,7 +185,7 @@ const tweetOptions = computed(() => {
   let options: DropdownOption[] = [];
   if (!props.isOwner) {
     options.push({
-      label: '私信 @' + props.post.user.username,
+      label: '私信 ' + props.post.user.nickname,
       key: 'whisper',
       icon: renderIcon(PaperPlaneOutline),
     });
@@ -194,13 +193,13 @@ const tweetOptions = computed(() => {
   if (!props.isOwner && props.addFollowAction) {
     if (props.post.user.is_following) {
       options.push({
-        label: '取消关注 @' + props.post.user.username,
+        label: '取消关注 ' + props.post.user.nickname,
         key: 'unfollow',
         icon: renderIcon(WalkOutline),
       });
     } else {
       options.push({
-        label: '关注 @' + props.post.user.username,
+        label: '关注 ' + props.post.user.nickname,
         key: 'follow',
         icon: renderIcon(BodyOutline),
       });
@@ -209,13 +208,13 @@ const tweetOptions = computed(() => {
   if (!props.isOwner && props.addFriendAction) {
     if (props.post.user.is_friend) {
       options.push({
-        label: '删除好友 @' + props.post.user.username,
+        label: '删除好友 ' + props.post.user.nickname,
         key: 'delete',
         icon: renderIcon(PersonRemoveOutline),
       });
     } else {
       options.push({
-        label: '添加朋友 @' + props.post.user.username,
+        label: '添加朋友 ' + props.post.user.nickname,
         key: 'requesting',
         icon: renderIcon(PersonAddOutline),
       });

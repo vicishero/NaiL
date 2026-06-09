@@ -16,7 +16,7 @@ export const useStoreProfile = defineStore("profile", () => {
         tweetWebEllipsisSize: 400,
         tweetMobileEllipsisSize: 300,
         defaultTweetVisibility: 'friend',
-        defaultMsgLoopInterval: 5000,
+        defaultMsgLoopInterval: 60000,
         copyrightTop: '2026 PaoPao',
         copyrightLeft: '',
         copyrightLeftLink: '',

@@ -74,7 +74,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, reactive, computed, watch } from 'vue';
+import { ref, onMounted, reactive, computed, watch, nextTick } from 'vue';
 import { useStoreMain } from '@/store/main';
 import { useRoute, useRouter } from 'vue-router';
 import { useDialog } from 'naive-ui';
@@ -88,6 +88,17 @@ import { usePagination } from '@/composables/usePagination';
 import UserAction from '@/composables/useUserAction';
 import TweetComposerTrigger from '@/components/tweet-composer-trigger.vue';
 import BannerCarousel from '@/components/banner-carousel.vue';
+
+// ========== 首屏性能日志 ==========
+function perfLog(label: string) {
+  const now = performance.now();
+  const elapsed = (now - (window as any).__PERF_START__).toFixed(2);
+  const info = `[${elapsed}ms] ${label}`;
+  (window as any).__PERF_LOG__.push(info);
+  console.log(`%c${info}`, 'color: #18a058; font-weight: bold;');
+}
+
+perfLog('Home.vue setup 开始');
 
 const storeMain = useStoreMain();
 const storeUser = useStoreUser();
@@ -175,6 +186,8 @@ const resetAll = () => {
 };
 
 function loadPosts(style: 'newest' | 'hots' | 'following' | 'search') {
+  perfLog(`开始请求帖子列表, style: ${style}`);
+  const requestStart = performance.now();
   loading.value = true;
   getPosts({
     query: route.query.q ? decodeURIComponent(route.query.q as string) : null,
@@ -184,6 +197,8 @@ function loadPosts(style: 'newest' | 'hots' | 'following' | 'search') {
     page_size: pageSize.value,
   })
     .then((rsp) => {
+      const elapsed = (performance.now() - requestStart).toFixed(2);
+      perfLog(`帖子列表请求完成, 耗时: ${elapsed}ms, 数量: ${rsp.list?.length || 0}`);
       loading.value = false;
       if (rsp.list.length === 0) {
         noMore.value = true;
@@ -239,10 +254,29 @@ const onHandleFriendAction = (post: Item.PostProps) => {
   }
 };
 
-onMounted(() => {
+onMounted(async () => {
+  perfLog('Home.vue onMounted 触发');
   resetAll();
+  await nextTick();
+  perfLog('Home.vue reset 完成, 开始加载帖子');
   loadPosts('newest');
 });
+
+// 监听帖子列表渲染完成
+watch(
+  () => list.value.length,
+  (newLen, oldLen) => {
+    if (newLen > 0 && oldLen === 0) {
+      nextTick().then(() => {
+        perfLog(`帖子列表 DOM 渲染完成, 共 ${newLen} 条`);
+        // 确保启动页已隐藏
+        if (typeof window !== 'undefined' && (window as any).hideSplashScreen) {
+          (window as any).hideSplashScreen();
+        }
+      });
+    }
+  }
+);
 
 watch(
   () => ({

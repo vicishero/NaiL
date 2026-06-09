@@ -88,7 +88,6 @@
                         <span class="nickname" @click.stop="goUserProfile">
                             {{ post.user.nickname }}
                         </span>
-                        <span class="username">@{{ post.user.username }}</span>
                         <n-tag
                             v-if="post.is_top"
                             class="badge-tag"
@@ -310,19 +309,19 @@ const adminOptions = computed(() => {
     userInfo.value.id != props.post.user.id
   ) {
     options.push({
-      label: '私信 @' + props.post.user.username,
+      label: '私信 ' + props.post.user.nickname,
       key: 'whisper',
       icon: renderIcon(PaperPlaneOutline),
     });
     if (props.post.user.is_following) {
       options.push({
-        label: '取消关注 @' + props.post.user.username,
+        label: '取消关注 ' + props.post.user.nickname,
         key: 'unfollow',
         icon: renderIcon(WalkOutline),
       });
     } else {
       options.push({
-        label: '关注 @' + props.post.user.username,
+        label: '关注 ' + props.post.user.nickname,
         key: 'follow',
         icon: renderIcon(BodyOutline),
       });

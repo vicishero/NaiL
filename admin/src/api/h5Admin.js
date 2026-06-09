@@ -29,3 +29,21 @@ export const deleteH5Collection = (data) => service({ url: '/h5Admin/collection'
 // --- H5 Following Management ---
 export const getH5FollowingList = (params) => service({ url: '/h5Admin/followingList', method: 'get', params })
 export const deleteH5Following = (data) => service({ url: '/h5Admin/following', method: 'delete', data })
+
+// --- KOL Profile Management ---
+export const getKolProfile = (params) => service({ url: '/h5Admin/kolProfile', method: 'get', params })
+export const saveKolProfileApi = (data) => service({ url: '/h5Admin/kolProfile', method: 'put', data })
+
+// --- KOL Category Management ---
+export const getKolCategoryList = () => service({ url: '/h5Admin/kolCategoryList', method: 'get' })
+export const saveKolCategory = (data) => service({ url: '/h5Admin/kolCategory', method: 'put', data })
+export const deleteKolCategory = (data) => service({ url: '/h5Admin/kolCategory', method: 'delete', data })
+
+// --- KOL Management ---
+export const getKolManageList = (params) => service({ url: '/h5Admin/kolManageList', method: 'get', params })
+export const assignKolCategory = (data) => service({ url: '/h5Admin/kolAssignCategory', method: 'put', data })
+
+// --- System Message Management ---
+export const getSysMsgList = (params) => service({ url: '/h5Admin/sysMsgList', method: 'get', params })
+export const createSysMsg = (data) => service({ url: '/h5Admin/sysMsg', method: 'post', data })
+export const deleteSysMsg = (data) => service({ url: '/h5Admin/sysMsg', method: 'delete', data })

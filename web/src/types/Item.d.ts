@@ -14,6 +14,10 @@ declare namespace Item {
     activation?: string;
     /** 是否为管理员 */
     is_admin: boolean;
+    /** 是否为KOL */
+    is_kol: boolean;
+    /** 钱包地址 */
+    address: string;
     /** 是否好友 */
     is_friend: boolean;
     /** 是否关注 */

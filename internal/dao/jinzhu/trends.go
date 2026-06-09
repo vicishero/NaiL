@@ -33,6 +33,19 @@ func (s *trendsSrvA) GetIndexTrends(userId int64, limit int, offset int) (res []
 	return
 }
 
+func (s *trendsSrvA) GetRecentUsers(limit int, offset int) (res []*cs.TrendsItem, total int64, err error) {
+	db := s.db.Table(_user_).
+		Where("status = ? AND is_del = ?", 1, 0) // 只获取正常状态的用户
+	if err = db.Count(&total).Error; err != nil || total == 0 {
+		return
+	}
+	if offset >= 0 && limit > 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+	err = db.Order("id DESC").Select("username", "nickname", "avatar").Find(&res).Error
+	return
+}
+
 func newTrendsManageServentA(db *gorm.DB) core.TrendsManageServantA {
 	return &trendsSrvA{
 		db: db,

@@ -44,7 +44,7 @@ func (s *messageSrv) ReadMessage(message *ms.Message) error {
 }
 
 func (s *messageSrv) ReadAllMessage(userId int64) error {
-	return s.db.Table(_message_).Where("receiver_user_id=? AND is_del=0", userId).Update("is_read", 1).Error
+	return s.db.Table(_message_).Where("(receiver_user_id=? OR receiver_user_id=0) AND is_del=0", userId).Update("is_read", 1).Error
 }
 
 func (s *messageSrv) GetMessages(userId int64, style cs.MessageStyle, limit int, offset int) (res []*ms.MessageFormated, total int64, err error) {
@@ -53,17 +53,18 @@ func (s *messageSrv) GetMessages(userId int64, style cs.MessageStyle, limit int,
 	// 1动态，2评论，3回复，4私信，5好友申请，99系统通知'
 	switch style {
 	case cs.StyleMsgSystem:
-		db = db.Where("receiver_user_id=? AND type IN (1, 2, 3, 99)", userId)
+		// 系统消息已迁移到 p_notice，由 NoticeService 处理
+		return nil, 0, nil
 	case cs.StyleMsgWhisper:
 		db = db.Where("(receiver_user_id=? OR sender_user_id=?) AND type=4", userId, userId)
 	case cs.StyleMsgRequesting:
 		db = db.Where("receiver_user_id=? AND type=5", userId)
 	case cs.StyleMsgUnread:
-		db = db.Where("receiver_user_id=? AND is_read=0", userId)
+		db = db.Where("(receiver_user_id=? OR receiver_user_id=0) AND is_read=0", userId)
 	case cs.StyleMsgAll:
 		fallthrough
 	default:
-		db = db.Where("receiver_user_id=? OR (sender_user_id=? AND type=4)", userId, userId)
+		db = db.Where("receiver_user_id=? OR receiver_user_id=0 OR (sender_user_id=? AND type=4)", userId, userId)
 	}
 	if err = db.Count(&total).Error; err != nil || total == 0 {
 		return

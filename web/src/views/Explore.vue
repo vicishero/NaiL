@@ -87,29 +87,23 @@ interface Category {
     }>;
 }
 
-// 模拟角色数据，后续可替换为真实API
-const mockCategories = ref<Category[]>([
-    {
-        id: 1,
-        name: '职场精英',
-        users: Array.from({ length: 6 }, (_, i) => ({
-            id: 100 + i,
-            nickname: ['张经理', '李总监', '王主管', '赵工程师', '钱设计师', '孙分析师'][i],
+// KOL分类数据
+const kolCategoryNames = [
+    '初恋学生', '都市御姐', '温柔少妇', '运动少女', '暗黑病娇',
+    '慵懒纯欲', '精灵奇幻', '街头辣妹', '文艺知性', '邻家治愈',
+];
+const mockCategories = ref<Category[]>(
+    kolCategoryNames.map((name, i) => ({
+        id: i + 1,
+        name,
+        users: Array.from({ length: 6 }, (_, j) => ({
+            id: (i + 1) * 1000 + j,
+            nickname: `${name}${j + 1}号`,
             avatar: '',
-            username: `user_${100 + i}`,
+            username: `kol_${i + 1}_${j + 1}`,
         })),
-    },
-    {
-        id: 2,
-        name: '校园生活',
-        users: Array.from({ length: 6 }, (_, i) => ({
-            id: 200 + i,
-            nickname: ['学霸小明', '文艺小红', '运动小刚', '艺术小丽', '科技小强', '文学小美'][i],
-            avatar: '',
-            username: `user_${200 + i}`,
-        })),
-    },
-]);
+    }))
+);
 const categories = ref<Category[]>([]);
 
 function goSearch() {
@@ -124,13 +118,33 @@ onMounted(async () => {
     // 加载 Trends 用户
     try {
         const res = await getIndexTrends({ page: 1, page_size: 5 });
-        trendingUsers.value = (res as any)?.list || [];
+        const data = (res as any)?.data || res;
+        trendingUsers.value = data?.list || (res as any)?.list || [];
     } catch (err) {
         console.log('Failed to load trends:', err);
     }
 
-    // 加载分类数据（当前用模拟数据）
-    categories.value = mockCategories.value;
+    // 加载KOL分类数据
+    try {
+        const apiRes = await fetch('/v1/explore/kolCategories');
+        const json = await apiRes.json();
+        if (json.code === 0 && json.data?.categories) {
+            categories.value = json.data.categories.map((c: any) => ({
+                id: Number(c.id),
+                name: c.name,
+                users: (c.users || []).map((u: any) => ({
+                    id: Number(u.id),
+                    nickname: u.nickname,
+                    avatar: u.avatar || '',
+                    username: u.username,
+                })),
+            }));
+        } else {
+            categories.value = mockCategories.value;
+        }
+    } catch {
+        categories.value = mockCategories.value;
+    }
 });
 </script>
 

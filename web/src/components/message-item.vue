@@ -3,8 +3,8 @@
     <n-thing content-indented>
       <template #avatar>
         <n-avatar round :size="30" :src="message.type == 4 && message.sender_user_id == userInfo.id
-            ? message.receiver_user.avatar
-            : (message.sender_user.id > 0
+            ? (message.receiver_user?.avatar || defaultavatar)
+            : (message.sender_user?.id > 0
               ? message.sender_user.avatar
               : defaultavatar
             )
@@ -12,8 +12,8 @@
       </template>
       <template #header>
         <div class="sender-wrap">
-          <span class="nickname" v-if="(message.type != 4 && message.sender_user.id > 0) || isWhisperReceiver">
-            <router-link @click.stop class="username-link" :to="{
+          <span class="nickname" v-if="(message.type != 4 && message.sender_user?.id > 0) || isWhisperReceiver">
+            <router-link v-if="message.sender_user?.id > 0" @click.stop class="username-link" :to="{
               name: 'user',
               query: {
                 s: message.sender_user.username,
@@ -21,9 +21,7 @@
             }">
               {{ message.sender_user.nickname }}
             </router-link>
-            <span v-if="desktopModelShow" class="username">
-              @{{ message.sender_user.username }}
-            </span>
+            <span v-else>系统通知</span>
           </span>
           <span class="nickname" v-else-if="isWhisperSender">
             <router-link @click.stop class="username-link" :to="{
@@ -34,9 +32,6 @@
             }">
               {{ message.receiver_user.nickname }}
             </router-link>
-            <span v-if="desktopModelShow" class="username">
-              @{{ message.receiver_user.username }}
-            </span>
           </span>
           <span class="nickname" v-else> 系统 </span>
           <n-tag v-if="isWhisperSender" class="top-tag" type="info" size="small" round>
@@ -171,7 +166,7 @@ const actionOpts = computed(() => {
       : props.message.sender_user;
   let options: DropdownOption[] = [
     {
-      label: '私信 @' + user.username,
+      label: '私信 ' + user.nickname,
       key: 'whisper',
       icon: renderIcon(PaperPlaneOutline),
     },
@@ -179,13 +174,13 @@ const actionOpts = computed(() => {
   if (userInfo.value.id != user.id) {
     if (user.is_following) {
       options.push({
-        label: '取消关注 @' + user.username,
+        label: '取消关注 ' + user.nickname,
         key: 'unfollow',
         icon: renderIcon(WalkOutline),
       });
     } else {
       options.push({
-        label: '关注 @' + user.username,
+        label: '关注 ' + user.nickname,
         key: 'follow',
         icon: renderIcon(BodyOutline),
       });
@@ -304,10 +299,17 @@ const rejectAddFriend = (message: Item.MessageProps) => {
 };
 
 const handleReadMessage = (message: Item.MessageProps) => {
-  if (props.message.receiver_user_id != userInfo.value.id) {
+  // 转换为字符串比较，避免类型不匹配问题
+  const senderUserId = String(message.sender_user_id);
+  const receiverUserId = String(message.receiver_user_id);
+  const currentUserId = String(userInfo.value.id);
+
+  // 自己发送的消息不标记已读（私信场景）
+  if (message.type === 4 && senderUserId === currentUserId) {
     return;
   }
-  if (message.is_read === 0) {
+  // 只对未读消息调用接口（使用宽松比较兼容字符串和数字类型）
+  if (message.is_read == 0) {
     Api.v1.user.message.post.read({
       id: message.id,
     })
@@ -315,7 +317,7 @@ const handleReadMessage = (message: Item.MessageProps) => {
         message.is_read = 1;
       })
       .catch((err) => {
-        console.log(err);
+        console.error('已读请求失败:', err);
       });
   }
 };
@@ -324,6 +326,7 @@ const handleReadMessage = (message: Item.MessageProps) => {
 <style lang="less" scoped>
 .message-item {
   padding: 16px;
+  cursor: pointer;
 
   &.unread {
     background: #fcfffc;
@@ -356,6 +359,7 @@ const handleReadMessage = (message: Item.MessageProps) => {
 
   .brief-wrap {
     margin-top: 10px;
+    pointer-events: none;
 
     .brief-content {
       display: flex;
@@ -370,6 +374,14 @@ const handleReadMessage = (message: Item.MessageProps) => {
     .requesting-friend-wrap {
       display: flex;
       width: 100%;
+    }
+
+    // 允许内部交互元素（按钮、链接）响应点击
+    .view-link,
+    .status-info,
+    :deep(.n-button),
+    :deep(.n-tag) {
+      pointer-events: auto;
     }
   }
 

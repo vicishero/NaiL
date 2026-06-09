@@ -1,10 +1,20 @@
 <template>
     <div>
+        <!-- 未登录提示 -->
+        <div v-if="userInfo.id <= 0" class="empty-wrap login-prompt">
+            <n-empty size="large" description="请登录后查看个人主页">
+                <template #extra>
+                    <n-button type="primary" @click="storeMain.triggerAuth(true)">
+                        立即登录
+                    </n-button>
+                </template>
+            </n-empty>
+        </div>
 
         <n-list
             class="main-content-wrap profile-wrap"
             bordered
-            v-if="userInfo.id > 0"
+            v-else
         >
             <!-- 基础信息 -->
             <!-- <n-spin :show="false" > -->
@@ -15,13 +25,18 @@
                 <div class="base-info">
                     <div class="username">
                         <strong>{{ userInfo.nickname }}</strong>
-                        <span> @{{ userInfo.username }} </span>
                         <n-tag v-if="userInfo.is_admin" class="top-tag" type="error" size="small" round>
                             管理员
                         </n-tag>
+                        <n-tag v-if="userInfo.is_kol" class="top-tag" type="warning" size="small" round>
+                            KOL
+                        </n-tag>
                     </div>
                     <div class="userinfo">
-                        <span class="info-item">UID. {{ userInfo.id }} </span>
+                        <span v-if="userInfo.address" class="info-item address-item" style="cursor:pointer" @click="copyAddress(userInfo.address)">
+                            {{ formatAddress(userInfo.address) }} <n-icon size="14" style="vertical-align:middle"><ContentCopyOutlined /></n-icon>
+                        </span>
+                        <span v-else class="info-item">UID. {{ userInfo.id }} </span>
                         <span class="info-item">{{ formatDate(userInfo.created_on) }}&nbsp;加入</span>
                     </div>
                     <div class="userinfo">
@@ -64,7 +79,7 @@
                 </div>
 
                 <div class="user-opts">
-                    <n-button quaternary circle @click="showSidebar = true">
+                    <n-button quaternary circle @click="openSidebar">
                         <template #icon>
                             <n-icon>
                                 <more-horiz-filled />
@@ -126,7 +141,7 @@ import { useDialog } from 'naive-ui';
 import { formatDate } from '@/utils/formatTime';
 import { prettyQuoteNum } from '@/utils/count';
 import InfiniteLoading from 'v3-infinite-loading';
-import { MoreHorizFilled } from '@vicons/material';
+import { MoreHorizFilled, ContentCopyOutlined } from '@vicons/material';
 import ProfileSidebar from '@/components/profile-sidebar.vue';
 import { useStoreUser } from '@/store/user';
 import { storeToRefs } from 'pinia';
@@ -180,6 +195,15 @@ const whisperReceiver = ref<Item.UserInfo>({
 });
 const showSidebar = ref(false);
 
+// 打开个人中心前检查登录状态
+function openSidebar() {
+  if (!storeUser.userLogined) {
+    storeMain.triggerAuth(true);
+    return;
+  }
+  showSidebar.value = true;
+}
+
 const listData = computed(() => {
 	switch (pageType.value) {
 		case 'post':
@@ -230,6 +254,8 @@ function updateFolloing(
 }
 
 const loadPage = () => {
+  // 未登录不加载数据
+  if (!storeUser.userLogined) return;
   loadPostsByStyle(pageType.value);
 };
 const styleListMap = {
@@ -289,6 +315,9 @@ const updatePage = () => {
   loadPostsByStyle(pageType.value);
 };
 const nextPage = () => {
+  // 未登录不加载数据
+  if (!storeUser.userLogined) return;
+
   if (page.value < totalPage.value || totalPage.value == 0) {
     noMore.value = false;
     page.value++;
@@ -297,6 +326,19 @@ const nextPage = () => {
     noMore.value = true;
   }
 };
+const formatAddress = (addr: string) => {
+  if (!addr || addr.length < 10) return addr || ''
+  return addr.substring(0, 6) + '...' + addr.substring(addr.length - 4)
+}
+const copyAddress = async (addr: string) => {
+  try { await navigator.clipboard.writeText(addr) }
+  catch {
+    const ta = document.createElement('textarea'); ta.value = addr; document.body.appendChild(ta)
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
+  }
+  window.$message?.success('地址已经复制成功')
+}
+
 onMounted(() => {
   loadPage();
 });
@@ -307,6 +349,9 @@ watch(
     refresh: refresh.value,
   }),
   (to, from) => {
+    // 未登录不加载数据
+    if (!storeUser.userLogined) return;
+
     if (to.refresh !== from.refresh) {
       page.value = +(route.query.p as string) || 1;
       setTimeout(() => {
@@ -388,5 +433,12 @@ watch(
     .profile-wrap, .pagination-wrap {
         background-color: rgba(16, 16, 20, 0.75);
     }
+}
+
+.login-prompt {
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 </style>

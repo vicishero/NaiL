@@ -14,7 +14,9 @@ import (
 	api "github.com/rocboss/paopao-ce/auto/api/v1"
 	"github.com/rocboss/paopao-ce/internal/conf"
 	"github.com/rocboss/paopao-ce/internal/core"
+	"github.com/rocboss/paopao-ce/internal/core/cs"
 	"github.com/rocboss/paopao-ce/internal/core/ms"
+	"github.com/rocboss/paopao-ce/internal/dao/jinzhu/dbr"
 	"github.com/rocboss/paopao-ce/internal/model/joint"
 	"github.com/rocboss/paopao-ce/internal/model/web"
 	"github.com/rocboss/paopao-ce/internal/servants/base"
@@ -60,6 +62,8 @@ func (s *coreSrv) GetUserInfo(req *web.UserInfoReq) (*web.UserInfoResp, error) {
 		Avatar:      user.Avatar,
 		Balance:     user.Balance,
 		IsAdmin:     user.IsAdmin,
+		IsKOL:       user.IsKOL,
+		Address:     user.Address,
 		CreatedOn:   user.CreatedOn,
 		Follows:     follows,
 		Followings:  followings,
@@ -73,6 +77,28 @@ func (s *coreSrv) GetUserInfo(req *web.UserInfoReq) (*web.UserInfoResp, error) {
 
 func (s *coreSrv) GetMessages(req *web.GetMessagesReq) (res *web.GetMessagesResp, _ error) {
 	limit, offset := req.PageSize, (req.Page-1)*req.PageSize
+
+	// 系统消息走 NoticeService
+	if req.Style == cs.StyleMsgSystem {
+		notices, totalRows, err := s.Ds.GetNotices(req.Uid, offset, limit)
+		if err != nil {
+			logrus.Errorf("Ds.GetNotices err: %s", err)
+			return nil, web.ErrGetMessagesFailed
+		}
+		// 转换为兼容格式（保留原 sender_user/receiver_user 设定）
+		formatted := make([]*ms.MessageFormated, len(notices))
+		for i, n := range notices {
+			formatted[i] = &ms.MessageFormated{
+				ID: n.ID, SenderUserID: n.SenderUserID, ReceiverUserID: n.ReceiverUserID,
+				SenderUser: &dbr.UserFormated{ID: n.SenderUserID},
+				ReceiverUser: &dbr.UserFormated{ID: n.ReceiverUserID},
+				Brief: n.Brief, Content: n.Content, IsRead: n.IsRead, CreatedOn: n.CreatedOn,
+			}
+		}
+		resp := joint.PageRespFrom(formatted, req.Page, req.PageSize, totalRows)
+		return &web.GetMessagesResp{CachePageResp: joint.CachePageResp{Data: resp}}, nil
+	}
+
 	// 尝试直接从缓存中获取数据
 	key, ok := "", false
 	if res, key, ok = s.messagesFromCache(req, limit, offset); ok {

@@ -28,9 +28,8 @@ function openCompose() {
 .fab-btn {
     position: fixed;
     bottom: 80px;
-    // 居中容器内的右边缘定位
-    left: 50%;
-    transform: translateX(174px);
+    // 使用 right 定位，确保在所有屏幕尺寸下都在可视范围内
+    right: 16px;
     width: 56px;
     height: 56px;
     border-radius: 50%;
@@ -45,12 +44,26 @@ function openCompose() {
 
     &:hover {
         background: #16914f;
-        transform: translateX(174px) scale(1.05);
+        transform: scale(1.05);
         box-shadow: 0 6px 16px rgba(24, 160, 88, 0.5);
     }
 
     &:active {
-        transform: translateX(174px) scale(0.95);
+        transform: scale(0.95);
+    }
+
+    // 移动端适配：距离底部 TabBar 稍远一些
+    @media (max-width: 768px) {
+        bottom: 90px;
+        right: 16px;
+    }
+
+    // 极小屏幕适配
+    @media (max-width: 375px) {
+        bottom: 85px;
+        right: 12px;
+        width: 52px;
+        height: 52px;
     }
 }
 </style>

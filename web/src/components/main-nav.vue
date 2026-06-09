@@ -1,5 +1,6 @@
 <template>
-    <div class="back-header">
+    <!-- 只有 title 有值时才显示，避免闪烁 -->
+    <div v-if="props.title" class="back-header">
         <n-button
             class="back-btn"
             @click="goBack"

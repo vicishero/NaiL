@@ -25,9 +25,15 @@
                             <n-tag v-if="user.is_admin" class="top-tag" type="error" size="small" round>
                                 管理员
                             </n-tag>
+                            <n-tag v-if="user.is_kol" class="top-tag" type="warning" size="small" round>
+                                KOL
+                            </n-tag>
                         </div>
                         <div class="userinfo">
-                            <span class="info-item">UID. {{ user.id }} </span>
+                            <span v-if="user.address" class="info-item address-item" style="cursor:pointer" @click="copyAddress(user.address)">
+                                {{ formatAddress(user.address) }} <n-icon size="14" style="vertical-align:middle"><copy-outline /></n-icon>
+                            </span>
+                            <span v-else class="info-item">UID. {{ user.id }} </span>
                             <span class="info-item">{{ formatDate(user.created_on) }}&nbsp;加入</span>
                         </div>
                         <div class="userinfo">
@@ -170,6 +176,7 @@ import {
   ChatbubbleOutline,
   AddOutline,
   CashOutline,
+  CopyOutline,
 } from '@vicons/ionicons5';
 import InfiniteLoading from 'v3-infinite-loading';
 import { useStoreUser } from '@/store/user';
@@ -598,6 +605,19 @@ const nextPage = () => {
     noMore.value = true;
   }
 };
+const formatAddress = (addr: string) => {
+  if (!addr || addr.length < 10) return addr || ''
+  return addr.substring(0, 6) + '...' + addr.substring(addr.length - 4)
+}
+const copyAddress = async (addr: string) => {
+  try { await navigator.clipboard.writeText(addr) }
+  catch {
+    const ta = document.createElement('textarea'); ta.value = addr; document.body.appendChild(ta)
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta)
+  }
+  window.$message?.success('地址已经复制成功')
+}
+
 onMounted(() => {
   loadUser();
 });

@@ -14,7 +14,6 @@ import (
 	"github.com/rocboss/paopao-ce/internal/model/joint"
 	"github.com/rocboss/paopao-ce/internal/model/web"
 	"github.com/rocboss/paopao-ce/internal/servants/base"
-	"github.com/rocboss/paopao-ce/internal/servants/chain"
 	"github.com/sirupsen/logrus"
 )
 
@@ -27,25 +26,19 @@ type trendsSrv struct {
 }
 
 func (s *trendsSrv) Chain() gin.HandlersChain {
-	return gin.HandlersChain{chain.JWT()}
+	// 不需要认证，未登录用户也能访问
+	return nil
 }
 
 func (s *trendsSrv) GetIndexTrends(req *web.GetIndexTrendsReq) (res *web.GetIndexTrendsResp, _ error) {
 	limit, offset := req.PageSize, (req.Page-1)*req.PageSize
-	// 尝试直接从缓存中获取数据
-	key, ok := "", false
-	if res, key, ok = s.trendsFromCache(req, limit, offset); ok {
-		// logrus.Debugf("trendsSrv.GetIndexTrends from cache key:%s", key)
-		return
-	}
-	trends, totalRows, err := s.Ds.GetIndexTrends(req.Uid, limit, offset)
+	// 获取最近注册的用户（无需认证，公开接口）
+	trends, totalRows, err := s.Ds.GetRecentUsers(limit, offset)
 	if err != nil {
-		logrus.Errorf("Ds.GetIndexTrends err[1]: %s", err)
+		logrus.Errorf("Ds.GetRecentUsers err: %s", err)
 		return nil, web.ErrGetIndexTrendsFailed
 	}
 	resp := joint.PageRespFrom(trends, req.Page, req.PageSize, totalRows)
-	// 缓存处理
-	base.OnCacheRespEvent(s.ac, key, resp, s.indexTrendsExpire)
 	return &web.GetIndexTrendsResp{
 		CachePageResp: joint.CachePageResp{
 			Data: resp,

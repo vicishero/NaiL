@@ -8,18 +8,161 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0" />
   <link rel="manifest" href="/manifest.json" />
   <title>泡泡</title>
+  <!-- ========== 启动页 CSS - 仅限启动页元素，不影响其他页面 ========== -->
+  <style>
+    /* 只重置启动页相关元素，不影响全局 */
+    #splash-screen * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* 启动页容器 - 覆盖整个视口，z-index 最高 */
+    #splash-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #18a058 0%, #36d399 100%);
+      z-index: 99999;
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    /* Logo 动画 */
+    @keyframes splash-pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.05); opacity: 0.9; }
+    }
+    @keyframes splash-fade-in {
+      from { opacity: 0; transform: translateY(20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    #splash-screen .splash-logo {
+      width: 100px;
+      height: 100px;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: splash-pulse 2s ease-in-out infinite;
+      margin-bottom: 20px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    }
+    #splash-screen .splash-logo-icon {
+      font-size: 48px;
+      color: white;
+      font-weight: bold;
+    }
+    #splash-screen .splash-title {
+      font-size: 32px;
+      font-weight: 700;
+      color: white;
+      margin-bottom: 8px;
+      animation: splash-fade-in 0.6s ease-out;
+      letter-spacing: 2px;
+    }
+    #splash-screen .splash-slogan {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0.85);
+      animation: splash-fade-in 0.6s ease-out 0.2s both;
+    }
+    #splash-screen .splash-loading {
+      position: absolute;
+      bottom: 80px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      animation: splash-fade-in 0.6s ease-out 0.4s both;
+    }
+    #splash-screen .splash-dot {
+      width: 8px;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.6);
+      border-radius: 50%;
+      animation: splash-pulse 1.4s ease-in-out infinite;
+    }
+    #splash-screen .splash-dot:nth-child(1) { animation-delay: 0s; }
+    #splash-screen .splash-dot:nth-child(2) { animation-delay: 0.2s; }
+    #splash-screen .splash-dot:nth-child(3) { animation-delay: 0.4s; }
+  </style>
+  <script>
+    // ========== 首屏性能日志 ==========
+    window.__PERF_LOG__ = [];
+    window.__PERF_START__ = performance.now();
+    function perfLog(label) {
+      var now = performance.now();
+      var elapsed = (now - window.__PERF_START__).toFixed(2);
+      var info = '[' + elapsed + 'ms] ' + label;
+      window.__PERF_LOG__.push(info);
+      console.log('%c' + info, 'color: #18a058; font-weight: bold;');
+    }
+    perfLog('HTML 开始解析');
+    // 记录关键时间点
+    if (performance.timing) {
+      window.addEventListener('load', function() {
+        var t = performance.timing;
+        console.log('%c=== 页面加载关键时间点 ===', 'color: #096dd9; font-weight: bold; font-size: 14px;');
+        console.log('DNS 查询:', (t.domainLookupEnd - t.domainLookupStart).toFixed(2) + 'ms');
+        console.log('TCP 连接:', (t.connectEnd - t.connectStart).toFixed(2) + 'ms');
+        console.log('首字节 TTFB:', (t.responseStart - t.requestStart).toFixed(2) + 'ms');
+        console.log('HTML 下载:', (t.responseEnd - t.responseStart).toFixed(2) + 'ms');
+        console.log('DOM 解析:', (t.domInteractive - t.responseEnd).toFixed(2) + 'ms');
+        console.log('DOM 完整:', (t.domComplete - t.responseEnd).toFixed(2) + 'ms');
+        console.log('onLoad 总耗时:', (t.loadEventEnd - t.navigationStart).toFixed(2) + 'ms');
+      });
+    }
+  </script>
 </head>
 
 <body>
+  <!-- ========== 启动页 - JS 加载完成前立即显示 ========== -->
+  <div id="splash-screen">
+    <div class="splash-logo">
+      <span class="splash-logo-icon">🫧</span>
+    </div>
+    <h1 class="splash-title">泡泡</h1>
+    <p class="splash-slogan">一个清新文艺的微社区</p>
+    <div class="splash-loading">
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+      <div class="splash-dot"></div>
+    </div>
+  </div>
+
   <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
   <script>
     var global = global || window;
+    perfLog('准备加载 main.ts');
     window.addEventListener("load", () => {
+      perfLog('window onload 触发');
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker.register("/sw.js");
       }
     });
+    // 隐藏启动页
+    function hideSplashScreen() {
+      var splash = document.getElementById('splash-screen');
+      if (splash) {
+        // 至少显示 800ms，避免闪屏
+        var minDisplayTime = 800;
+        var elapsed = performance.now() - window.__PERF_START__;
+        var delay = Math.max(0, minDisplayTime - elapsed);
+        setTimeout(function() {
+          splash.style.opacity = '0';
+          splash.style.transform = 'scale(1.05)';
+          setTimeout(function() {
+            splash.remove();
+            perfLog('启动页已隐藏, 页面渲染完成');
+          }, 500);
+        }, delay);
+      }
+    }
   </script>
 </body>
 

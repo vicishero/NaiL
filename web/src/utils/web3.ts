@@ -6,19 +6,52 @@ declare global {
       request: (args: { method: string; params?: any[] }) => Promise<any>
       on: (event: string, callback: (...args: any[]) => void) => void
       removeListener: (event: string, callback: (...args: any[]) => void) => void
+      isMetaMask?: boolean
+      isTokenPocket?: boolean
+      chainId?: string
+    }
+    web3?: {
+      currentProvider?: any
     }
   }
 }
 
-// 检查是否已安装钱包
+// 获取钱包提供者（兼容多种钱包）
+export function getWalletProvider(): any {
+  if (typeof window === 'undefined') return null
+
+  // 优先使用 ethereum
+  if (window.ethereum) {
+    return window.ethereum
+  }
+
+  // 兼容旧版 web3 方式
+  if (window.web3?.currentProvider) {
+    return window.web3.currentProvider
+  }
+
+  return null
+}
+
+// 检查是否已安装钱包（兼容多种钱包）
 export function hasWallet(): boolean {
-  return typeof window !== 'undefined' && window.ethereum !== undefined
+  return !!getWalletProvider()
+}
+
+// 获取钱包名称
+export function getWalletName(): string {
+  const provider = getWalletProvider()
+  if (!provider) return 'Unknown'
+  if (provider.isMetaMask) return 'MetaMask'
+  if (provider.isTokenPocket) return 'TokenPocket'
+  return 'Wallet'
 }
 
 // 获取钱包提供者
 export function getProvider(): BrowserProvider | null {
-  if (!window.ethereum) return null
-  return new BrowserProvider(window.ethereum)
+  const provider = getWalletProvider()
+  if (!provider) return null
+  return new BrowserProvider(provider)
 }
 
 // 连接钱包获取签名者
@@ -42,7 +75,7 @@ export async function connectWallet(): Promise<{
   }
 }
 
-// 签名消息
+// 签名消息（兼容不同钱包）
 export async function signMessage(signer: JsonRpcSigner, message: string): Promise<string | null> {
   try {
     const signature = await signer.signMessage(message)

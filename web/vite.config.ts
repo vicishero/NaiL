@@ -8,6 +8,25 @@ import { NaiveUiResolver } from 'unplugin-vue-components/resolvers';
 export default defineConfig({
   server: {
     host: '0.0.0.0',
+    // 优化开发服务器性能
+    fs: {
+      strict: false,
+    },
+    cors: true,
+  },
+  // 优化依赖预构建
+  optimizeDeps: {
+    include: [
+      'vue',
+      'pinia',
+      'vue-router',
+      'axios',
+      'naive-ui',
+      'lodash',
+      'moment',
+      'ethers',
+    ],
+    exclude: [],
   },
   plugins: [
     vue(),
@@ -27,14 +46,11 @@ export default defineConfig({
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            return id
-              .toString()
-              .split('node_modules/')[1]
-              .split('/')[0]
-              .toString();
-          }
+        manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
+          'naive-ui': ['naive-ui'],
+          'utils': ['axios', 'lodash', 'moment'],
+          'ethers': ['ethers'],
         },
       },
     },

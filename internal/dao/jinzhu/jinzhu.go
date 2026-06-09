@@ -24,6 +24,7 @@ var _onceInitial sync.Once
 type dataSrv struct {
 	core.WalletService
 	core.MessageService
+	core.NoticeService
 	core.TopicService
 	core.TweetService
 	core.TweetManageService
@@ -63,6 +64,7 @@ func NewDataService() (core.DataService, core.VersionInfo) {
 		UserMetricServantA:     ums,
 		WalletService:          newWalletService(db),
 		MessageService:         newMessageService(db),
+		NoticeService:          newNoticeService(db),
 		TopicService:           newTopicService(db),
 		TweetService:           newTweetService(db),
 		TweetManageService:     newTweetManageService(db, cis),

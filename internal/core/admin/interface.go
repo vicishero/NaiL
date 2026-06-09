@@ -168,6 +168,27 @@ type AdminService interface {
 	// H5运维评论管理
 	GetH5CommentList(ctx context.Context, req *H5CommentListReq) (int64, []H5CommentItem, error)
 	DeleteH5Comment(ctx context.Context, commentID int64) error
+
+	// H5运维KOL属性管理
+	GetKolProfile(ctx context.Context, userID int64) (*H5KolProfileItem, error)
+	SaveKolProfile(ctx context.Context, req *H5KolProfileSaveReq) error
+
+	// H5运维KOL分类管理
+	GetKolCategoryList(ctx context.Context) ([]H5KolCategoryItem, error)
+	SaveKolCategory(ctx context.Context, req *H5KolCategorySaveReq) error
+	DeleteKolCategory(ctx context.Context, id int64) error
+
+	// H5运维KOL用户管理
+	GetKolManageList(ctx context.Context, req *H5KolManageListReq) (int64, []H5KolManageItem, error)
+	AssignKolCategory(ctx context.Context, req *H5KolAssignCategoryReq) error
+
+	// 探索页KOL分类
+	GetExploreKolCategories(ctx context.Context) (*ExploreKolCategoryResp, error)
+
+	// H5运维系统消息管理
+	GetSysMsgList(ctx context.Context, req *H5SysMsgListReq) (int64, []H5SysMsgItem, error)
+	CreateSysMsg(ctx context.Context, req *H5SysMsgCreateReq) error
+	DeleteSysMsg(ctx context.Context, id int64) error
 }
 
 // AdminDao 管理后台数据访问接口

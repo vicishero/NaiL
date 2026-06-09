@@ -14,6 +14,7 @@ export const useStoreUser = defineStore('user', () => {
         followings: 0,
         tweets_count: 0,
         is_admin: false,
+        is_kol: false,
     });
 
     const userLogined = computed(() => userInfo.value.id != '0');
@@ -33,6 +34,7 @@ export const useStoreUser = defineStore('user', () => {
             followings: 0,
             tweets_count: 0,
             is_admin: false,
+        is_kol: false,
         };
     }
 

@@ -89,6 +89,8 @@ type GetUserProfileResp struct {
 	Status      int    `json:"status"`
 	Avatar      string `json:"avatar"`
 	IsAdmin     bool   `json:"is_admin"`
+	IsKOL       bool   `json:"is_kol"`
+	Address     string `json:"address"`
 	IsFriend    bool   `json:"is_friend"`
 	IsFollowing bool   `json:"is_following"`
 	CreatedOn   int64  `json:"created_on"`

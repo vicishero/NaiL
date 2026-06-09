@@ -17,9 +17,6 @@
                         {{ comment.user.nickname }}
                     </router-link>
                 </span>
-                <span class="username-wrap">
-                    @{{ comment.user.username }}
-                </span>
                 <n-tag
                     v-if="comment.is_essence == YesNoEnum.YES"
                     class="top-tag"

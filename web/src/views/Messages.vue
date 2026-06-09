@@ -13,13 +13,10 @@
                 @click="switchTab(tab.key)"
             >
                 {{ tab.label }}
-                <n-badge
-                    v-if="tab.key === 'dm' && unreadMsgCount > 0"
-                    :value="unreadMsgCount"
-                    :max="99"
-                    size="tiny"
-                    class="tab-badge"
-                />
+                <span
+                    v-if="(tab.key === 'dm' || tab.key === 'system') && getTabUnread(tab.key) > 0"
+                    class="tab-unread"
+                >{{ getTabUnread(tab.key) > 99 ? '99+' : getTabUnread(tab.key) }}</span>
             </div>
         </div>
 
@@ -118,6 +115,13 @@ const tabs = [
     { key: 'system' as const, label: '系统消息' },
 ];
 
+const dmUnread = ref(0);
+const sysUnread = ref(0);
+function getTabUnread(key: string) {
+    if (key === 'dm') return dmUnread.value;
+    if (key === 'system') return sysUnread.value;
+    return 0;
+}
 function switchTab(key: TabKey) {
     activeTab.value = key;
 }
@@ -183,6 +187,7 @@ function loadMessages() {
                 ...(friendRes?.list || []),
                 ...(whisperRes?.list || []),
             ].sort((a: any, b: any) => b.created_on - a.created_on);
+            dmUnread.value = combined.filter((m: any) => !m.is_read).length;
             if (combined.length === 0 && page.value === 1) {
                 noMore.value = true;
             }
@@ -227,6 +232,8 @@ function loadSysMessages() {
     Api.v1.user.get.messages({ style: 'system', page: sysPage.value, page_size: sysPageSize.value })
         .then((res: any) => {
             sysLoading.value = false;
+            // 统计未读系统消息
+            sysUnread.value = (res.list || []).filter((m: any) => !m.is_read).length;
             if (res.list.length === 0) {
                 sysNoMore.value = true;
             }
@@ -314,8 +321,21 @@ onMounted(() => {
     }
 }
 
-.tab-badge {
-    margin-left: 4px;
+.tab-unread {
+    position: absolute;
+    top: 6px;
+    right: 20px;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0 5px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #fff;
+    background: #d93025;
+    border-radius: 9px;
+    text-align: center;
+    z-index: 1;
 }
 
 // 聊天列表

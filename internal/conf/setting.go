@@ -428,6 +428,7 @@ func (s *databaseConf) TableNames() (res TableNameMap) {
 		TableUserMetric,
 		TableWalletRecharge,
 		TableWalletStatement,
+		TableNotice,
 	}
 	res = make(TableNameMap, len(tableNames))
 	for _, name := range tableNames {

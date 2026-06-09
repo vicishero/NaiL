@@ -77,6 +77,10 @@ func RegisterAdminRoutes(e *gin.Engine, basePath string) {
 			h5Group.GET("/followingList", GvaEmptyList)
 			h5Group.GET("/following", GvaEmptyObject)
 			h5Group.DELETE("/following", GvaSuccess)
+			h5Group.GET("/kolProfile", s.GetKolProfile)
+			h5Group.PUT("/kolProfile", s.SaveKolProfile)
+			h5Group.GET("/kolCategoryList", s.GetKolCategoryList)
+			h5Group.GET("/sysMsgList", s.GetSysMsgList)
 		}
 	}
 
@@ -91,6 +95,7 @@ func RegisterAdminRoutes(e *gin.Engine, basePath string) {
 		registerOperationLogRoutes(permGroup, s)
 		registerSystemRoutes(permGroup, s)
 		registerFileRoutes(permGroup, s)
+		registerKolRoutes(permGroup, s)
 		registerGvaPermissionRoutes(permGroup, s)
 	}
 }
@@ -207,6 +212,19 @@ func registerGvaAuthRoutes(g *gin.RouterGroup, s *AuthServant) {
 	registerGetPost(g, "/casbin/getPolicyPathByAuthorityId", s.GetPolicyPathByAuthorityId)
 	g.POST("/casbin/updateCasbin", s.UpdateCasbin)
 
+}
+
+// registerKolRoutes KOL管理接口(需要权限校验)
+func registerKolRoutes(g *gin.RouterGroup, s *AuthServant) {
+	kolGroup := g.Group("/h5Admin")
+	{
+		kolGroup.PUT("/kolCategory", s.SaveKolCategory)
+		kolGroup.DELETE("/kolCategory", s.DeleteKolCategory)
+		kolGroup.GET("/kolManageList", s.GetKolManageList)
+		kolGroup.PUT("/kolAssignCategory", s.AssignKolCategory)
+		kolGroup.POST("/sysMsg", s.CreateSysMsg)
+		kolGroup.DELETE("/sysMsg", s.DeleteSysMsg)
+	}
 }
 
 // registerGvaPermissionRoutes 需要权限校验的GVA兼容通用接口

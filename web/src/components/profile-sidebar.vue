@@ -151,6 +151,17 @@
                             </template>
                             关于平台
                         </n-list-item>
+                        <n-list-item
+                            class="menu-item logout-item"
+                            @click="handleLogout"
+                        >
+                            <template #prefix>
+                                <n-icon :size="20">
+                                    <log-out-outline />
+                                </n-icon>
+                            </template>
+                            退出登录
+                        </n-list-item>
                     </n-list>
                 </div>
             </div>
@@ -171,15 +182,19 @@ import {
     InformationCircleOutline,
     StarOutline,
     ReceiptOutline,
+    LogOutOutline,
 } from '@vicons/ionicons5';
 import { useStoreMain } from '@/store/main';
+import { useStoreUser } from '@/store/user';
 import { storeToRefs } from 'pinia';
-import { useMessage } from 'naive-ui';
+import { useMessage, useDialog } from 'naive-ui';
 
 const storeMain = useStoreMain();
+const storeUser = useStoreUser();
 const { theme } = storeToRefs(storeMain);
 const router = useRouter();
 const message = useMessage();
+const dialog = useDialog();
 
 const emit = defineEmits<{
     close: [];
@@ -272,6 +287,22 @@ function handleMenuAction(action: string) {
 function handleClose() {
     emit('close');
 }
+
+// 退出登录
+function handleLogout() {
+    dialog.warning({
+        title: '确认退出',
+        content: '确定要退出当前账号吗？',
+        positiveText: '确定',
+        negativeText: '取消',
+        onPositiveClick: () => {
+            storeUser.userLogout();
+            handleClose();
+            message.success('已退出登录');
+            router.push({ name: 'home' });
+        },
+    });
+}
 </script>
 
 <style lang="less" scoped>
@@ -303,6 +334,14 @@ function handleClose() {
         white-space: nowrap;
         min-width: 56px;
         text-align: right;
+    }
+
+    &.logout-item {
+        color: #d03050;
+
+        &:hover {
+            background-color: rgba(208, 48, 80, 0.05);
+        }
     }
 }
 
@@ -338,6 +377,14 @@ function handleClose() {
 
     .suffix-text {
         color: #666;
+    }
+
+    .logout-item {
+        color: #e53935;
+
+        &:hover {
+            background-color: rgba(229, 57, 53, 0.1);
+        }
     }
 }
 

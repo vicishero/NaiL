@@ -25,6 +25,7 @@ type User struct {
 	Avatar   string `json:"avatar"`
 	Balance  int64  `json:"balance"`
 	IsAdmin  bool   `json:"is_admin"`
+	IsKOL    bool   `json:"is_kol"`
 	Address  string `json:"address" gorm:"size:42;index:idx_address"` // 钱包地址
 }
 
@@ -35,6 +36,7 @@ type UserFormated struct {
 	Status      int    `json:"status"`
 	Avatar      string `json:"avatar"`
 	IsAdmin     bool   `json:"is_admin"`
+	IsKOL       bool   `json:"is_kol"`
 	IsFriend    bool   `json:"is_friend"`
 	IsFollowing bool   `json:"is_following"`
 }
@@ -48,6 +50,7 @@ func (u *User) Format() *UserFormated {
 			Status:   u.Status,
 			Avatar:   u.Avatar,
 			IsAdmin:  u.IsAdmin,
+			IsKOL:    u.IsKOL,
 		}
 	}
 

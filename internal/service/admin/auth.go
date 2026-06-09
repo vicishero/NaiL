@@ -1070,6 +1070,8 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 		Phone     string `gorm:"column:phone"`
 		Avatar    string `gorm:"column:avatar"`
 		Status    int    `gorm:"column:status"`
+		IsAdmin   bool   `gorm:"column:is_admin"`
+		IsKOL     bool   `gorm:"column:is_kol"`
 		CreatedOn int64  `gorm:"column:created_on"`
 		Address   string `gorm:"column:address"`
 	}
@@ -1134,6 +1136,8 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 			Bio:           "",
 			Avatar:        r.Avatar,
 			Status:        r.Status,
+			IsAdmin:       r.IsAdmin,
+			IsKOL:         r.IsKOL,
 			CreatedAt:     time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
 		}
 	}
@@ -1150,6 +1154,8 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Phone     string `gorm:"column:phone"`
 		Avatar    string `gorm:"column:avatar"`
 		Status    int    `gorm:"column:status"`
+		IsAdmin   bool   `gorm:"column:is_admin"`
+		IsKOL     bool   `gorm:"column:is_kol"`
 		CreatedOn int64  `gorm:"column:created_on"`
 		Address   string `gorm:"column:address"`
 	}
@@ -1177,7 +1183,15 @@ func (s *adminService) UpdateH5User(ctx context.Context, req *admin.H5UserUpdate
 	if req.Nickname != "" {
 		updates["nickname"] = req.Nickname
 	}
-	updates["status"] = req.Status
+	if req.Status != nil {
+		updates["status"] = *req.Status
+	}
+	if req.IsAdmin != nil {
+		updates["is_admin"] = *req.IsAdmin
+	}
+	if req.IsKOL != nil {
+		updates["is_kol"] = *req.IsKOL
+	}
 	return s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ? AND is_del = 0", req.ID).Updates(updates).Error
 }
 
@@ -1579,5 +1593,285 @@ func (s *adminService) DeleteH5Comment(ctx context.Context, commentID int64) err
 	return s.dao.DB().WithContext(ctx).Table("p_comment").Where("id = ?", commentID).Updates(map[string]interface{}{
 		"is_del":     1,
 		"deleted_on": time.Now().Unix(),
+	}).Error
+}
+
+// ====== H5运维KOL属性管理 ======
+
+// GetKolProfile 获取KOL人物属性
+func (s *adminService) GetKolProfile(ctx context.Context, userID int64) (*admin.H5KolProfileItem, error) {
+	type pKolProfile struct {
+		UserID        int64  `gorm:"column:user_id"`
+		Height        string `gorm:"column:height"`
+		Weight        string `gorm:"column:weight"`
+		Measurements  string `gorm:"column:measurements"`
+		SkinTone      string `gorm:"column:skin_tone"`
+		EyeColor      string `gorm:"column:eye_color"`
+		Orientation   string `gorm:"column:orientation"`
+		Preferences   string `gorm:"column:preferences"`
+		FavoriteFoods string `gorm:"column:favorite_foods"`
+		ClothingStyle string `gorm:"column:clothing_style"`
+		MakeupStyle   string `gorm:"column:makeup_style"`
+		CategoryID    int64  `gorm:"column:category_id"`
+	}
+	var row pKolProfile
+	err := s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("user_id = ? AND is_del = 0", userID).First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &admin.H5KolProfileItem{
+		UserID:        row.UserID,
+		Height:        row.Height,
+		Weight:        row.Weight,
+		Measurements:  row.Measurements,
+		SkinTone:      row.SkinTone,
+		EyeColor:      row.EyeColor,
+		Orientation:   row.Orientation,
+		Preferences:   row.Preferences,
+		FavoriteFoods: row.FavoriteFoods,
+		ClothingStyle: row.ClothingStyle,
+		MakeupStyle:   row.MakeupStyle,
+		CategoryID:    row.CategoryID,
+	}, nil
+}
+
+// SaveKolProfile 保存KOL人物属性(upsert)
+func (s *adminService) SaveKolProfile(ctx context.Context, req *admin.H5KolProfileSaveReq) error {
+	type pKolProfile struct {
+		ID           int64 `gorm:"column:id"`
+		UserID       int64 `gorm:"column:user_id"`
+	}
+	var existing pKolProfile
+	err := s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("user_id = ? AND is_del = 0", req.UserID).First(&existing).Error
+	updates := map[string]interface{}{
+		"user_id":        req.UserID,
+		"height":         req.Height,
+		"weight":         req.Weight,
+		"measurements":   req.Measurements,
+		"skin_tone":      req.SkinTone,
+		"eye_color":      req.EyeColor,
+		"orientation":    req.Orientation,
+		"preferences":    req.Preferences,
+		"favorite_foods": req.FavoriteFoods,
+		"clothing_style": req.ClothingStyle,
+		"makeup_style":   req.MakeupStyle,
+		"category_id":    req.CategoryID,
+	}
+	if err != nil {
+		// 不存在则创建
+		updates["created_on"] = time.Now().Unix()
+		updates["modified_on"] = time.Now().Unix()
+		return s.dao.DB().WithContext(ctx).Table("p_kol_profile").Create(updates).Error
+	}
+	updates["modified_on"] = time.Now().Unix()
+	return s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("id = ?", existing.ID).Updates(updates).Error
+}
+
+// ====== H5运维KOL分类管理 ======
+
+// GetKolCategoryList 获取KOL分类列表
+func (s *adminService) GetKolCategoryList(ctx context.Context) ([]admin.H5KolCategoryItem, error) {
+	type pCat struct {
+		ID   int64  `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+		Sort int    `gorm:"column:sort"`
+	}
+	var rows []pCat
+	if err := s.dao.DB().WithContext(ctx).Table("p_kol_category").Where("is_del = 0").Order("sort ASC").Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	items := make([]admin.H5KolCategoryItem, len(rows))
+	for i, r := range rows {
+		var cnt int64
+		s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("category_id = ? AND is_del = 0", r.ID).Count(&cnt)
+		items[i] = admin.H5KolCategoryItem{ID: r.ID, Name: r.Name, Sort: r.Sort, UserCount: cnt}
+	}
+	return items, nil
+}
+
+// SaveKolCategory 保存KOL分类(新增/更新)
+func (s *adminService) SaveKolCategory(ctx context.Context, req *admin.H5KolCategorySaveReq) error {
+	if req.ID > 0 {
+		return s.dao.DB().WithContext(ctx).Table("p_kol_category").Where("id = ?", req.ID).Updates(map[string]interface{}{
+			"name": req.Name, "sort": req.Sort, "modified_on": time.Now().Unix(),
+		}).Error
+	}
+	return s.dao.DB().WithContext(ctx).Table("p_kol_category").Create(map[string]interface{}{
+		"name": req.Name, "sort": req.Sort, "created_on": time.Now().Unix(),
+	}).Error
+}
+
+// DeleteKolCategory 删除KOL分类
+func (s *adminService) DeleteKolCategory(ctx context.Context, id int64) error {
+	return s.dao.DB().WithContext(ctx).Table("p_kol_category").Where("id = ?", id).Updates(map[string]interface{}{
+		"is_del": 1, "deleted_on": time.Now().Unix(),
+	}).Error
+}
+
+// ====== H5运维KOL用户管理 ======
+
+// GetKolManageList 获取KOL管理列表
+func (s *adminService) GetKolManageList(ctx context.Context, req *admin.H5KolManageListReq) (int64, []admin.H5KolManageItem, error) {
+	type pRow struct {
+		ID           int64  `gorm:"column:id"`
+		Nickname     string `gorm:"column:nickname"`
+		Username     string `gorm:"column:username"`
+		Avatar       string `gorm:"column:avatar"`
+		CreatedOn    int64  `gorm:"column:created_on"`
+		CategoryID   int64  `gorm:"column:category_id"`
+		Height       string `gorm:"column:height"`
+		Weight       string `gorm:"column:weight"`
+		Measurements string `gorm:"column:measurements"`
+		Address      string `gorm:"column:address"`
+	}
+
+	var total int64
+	db := s.dao.DB().WithContext(ctx).Table("p_user u").
+		Joins("LEFT JOIN p_kol_profile p ON u.id = p.user_id AND p.is_del = 0").
+		Where("u.is_del = 0 AND u.is_kol = 1")
+	if req.CategoryID > 0 {
+		db = db.Where("p.category_id = ?", req.CategoryID)
+	}
+	if req.Keyword != "" {
+		db = db.Where("u.nickname LIKE ?", "%"+req.Keyword+"%")
+	}
+	if err := db.Count(&total).Error; err != nil {
+		return 0, nil, err
+	}
+
+	if req.Page <= 0 { req.Page = 1 }
+	if req.PageSize <= 0 { req.PageSize = 10 }
+	offset := (req.Page - 1) * req.PageSize
+
+	var rows []pRow
+	if err := db.Select("u.id, u.nickname, u.username, u.avatar, u.address, u.created_on, COALESCE(p.category_id,0) AS category_id, COALESCE(p.height,'') AS height, COALESCE(p.weight,'') AS weight, COALESCE(p.measurements,'') AS measurements").
+		Order("u.id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+		return 0, nil, err
+	}
+
+	// 获取分类名称映射
+	catNames := make(map[int64]string)
+	var cats []struct {
+		ID   int64  `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	s.dao.DB().WithContext(ctx).Table("p_kol_category").Where("is_del = 0").Find(&cats)
+	for _, c := range cats { catNames[c.ID] = c.Name }
+
+	items := make([]admin.H5KolManageItem, len(rows))
+	for i, r := range rows {
+		items[i] = admin.H5KolManageItem{
+			ID: r.ID, Nickname: r.Nickname, Username: r.Username, Avatar: r.Avatar,
+			CategoryID: r.CategoryID, CategoryName: catNames[r.CategoryID],
+			Height: r.Height, Weight: r.Weight, Measurements: r.Measurements,
+			WalletAddress: r.Address,
+			CreatedAt: time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+	return total, items, nil
+}
+
+// AssignKolCategory 分配KOL分类
+func (s *adminService) AssignKolCategory(ctx context.Context, req *admin.H5KolAssignCategoryReq) error {
+	// 检查profile是否存在
+	var cnt int64
+	s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("user_id = ? AND is_del = 0", req.UserID).Count(&cnt)
+	if cnt > 0 {
+		return s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("user_id = ?", req.UserID).Updates(map[string]interface{}{
+			"category_id": req.CategoryID, "modified_on": time.Now().Unix(),
+		}).Error
+	}
+	return s.dao.DB().WithContext(ctx).Table("p_kol_profile").Create(map[string]interface{}{
+		"user_id": req.UserID, "category_id": req.CategoryID, "created_on": time.Now().Unix(),
+	}).Error
+}
+
+// ====== 探索页KOL分类 ======
+
+// GetExploreKolCategories 获取探索页KOL分类及用户
+func (s *adminService) GetExploreKolCategories(ctx context.Context) (*admin.ExploreKolCategoryResp, error) {
+	type pCat struct {
+		ID   int64  `gorm:"column:id"`
+		Name string `gorm:"column:name"`
+	}
+	var cats []pCat
+	s.dao.DB().WithContext(ctx).Table("p_kol_category").Where("is_del = 0").Order("sort ASC").Find(&cats)
+
+	type pUser struct {
+		ID       int64  `gorm:"column:id"`
+		Nickname string `gorm:"column:nickname"`
+		Username string `gorm:"column:username"`
+		Avatar   string `gorm:"column:avatar"`
+	}
+
+	result := make([]admin.ExploreKolCategory, 0, len(cats))
+	for _, c := range cats {
+		var users []pUser
+		s.dao.DB().WithContext(ctx).Table("p_user u").
+			Joins("INNER JOIN p_kol_profile p ON u.id = p.user_id AND p.is_del = 0 AND p.category_id = ?", c.ID).
+			Where("u.is_del = 0 AND u.is_kol = 1").Limit(6).Find(&users)
+		eu := make([]admin.ExploreKolUser, len(users))
+		for i, u := range users {
+			eu[i] = admin.ExploreKolUser{ID: u.ID, Nickname: u.Nickname, Username: u.Username, Avatar: u.Avatar}
+		}
+		result = append(result, admin.ExploreKolCategory{ID: c.ID, Name: c.Name, Users: eu})
+	}
+	return &admin.ExploreKolCategoryResp{Categories: result}, nil
+}
+
+// ====== H5运维系统消息管理 ======
+
+// GetSysMsgList 获取系统消息列表
+func (s *adminService) GetSysMsgList(ctx context.Context, req *admin.H5SysMsgListReq) (int64, []admin.H5SysMsgItem, error) {
+	type pMsg struct {
+		ID             int64  `gorm:"column:id"`
+		SenderUserID   int64  `gorm:"column:sender_user_id"`
+		ReceiverUserID int64  `gorm:"column:receiver_user_id"`
+		Brief          string `gorm:"column:brief"`
+		Content        string `gorm:"column:content"`
+		IsRead         int8   `gorm:"column:is_read"`
+		CreatedOn      int64  `gorm:"column:created_on"`
+	}
+	var total int64
+	var rows []pMsg
+
+	db := s.dao.DB().WithContext(ctx).Table("p_notice").Where("is_del = 0")
+	if err := db.Count(&total).Error; err != nil {
+		return 0, nil, err
+	}
+	if req.Page <= 0 { req.Page = 1 }
+	if req.PageSize <= 0 { req.PageSize = 10 }
+	offset := (req.Page - 1) * req.PageSize
+	if err := db.Order("id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+		return 0, nil, err
+	}
+
+	items := make([]admin.H5SysMsgItem, len(rows))
+	for i, r := range rows {
+		items[i] = admin.H5SysMsgItem{
+			ID: r.ID, SenderID: r.SenderUserID, ReceiverID: r.ReceiverUserID,
+			Brief: r.Brief, Content: r.Content, IsRead: r.IsRead,
+			CreatedAt: time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+	return total, items, nil
+}
+
+// CreateSysMsg 创建系统消息
+func (s *adminService) CreateSysMsg(ctx context.Context, req *admin.H5SysMsgCreateReq) error {
+	return s.dao.DB().WithContext(ctx).Table("p_notice").Create(map[string]interface{}{
+		"sender_user_id":   0,
+		"receiver_user_id": req.ReceiverID,
+		"brief":            req.Brief,
+		"content":          req.Content,
+		"is_read":          0,
+		"created_on":       time.Now().Unix(),
+	}).Error
+}
+
+// DeleteSysMsg 删除系统消息
+func (s *adminService) DeleteSysMsg(ctx context.Context, id int64) error {
+	return s.dao.DB().WithContext(ctx).Table("p_notice").Where("id = ?", id).Updates(map[string]interface{}{
+		"is_del": 1, "deleted_on": time.Now().Unix(),
 	}).Error
 }
