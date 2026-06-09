@@ -24,11 +24,18 @@ service.interceptors.request.use(
 
 service.interceptors.response.use(
 	(response) => {
+		// 检查响应是否为HTML（通常表示错误页面或代理问题）
+		const contentType = response.headers?.['content-type'] || '';
+		if (contentType.includes('text/html')) {
+			console.error('API returned HTML instead of JSON:', response.data);
+			return Promise.reject({ msg: '服务器响应异常，请稍后重试' });
+		}
+
 		const { data = {}, code = 0 } = response?.data || {};
 		if (+code === 0) {
 			return data || {};
 		} else {
-			Promise.reject(response?.data || {});
+			return Promise.reject(response?.data || {});
 		}
 	},
 	(error = {}) => {
@@ -37,14 +44,22 @@ service.interceptors.response.use(
 		if (+response?.status === 401) {
 			localStorage.removeItem(TOKEN_KEY);
 
-			if (response?.data.code !== 10005) {
-				window.$message.warning(response?.data.msg || '鉴权失败');
+			if (response?.data?.code !== 10005) {
+				window.$message.warning(response?.data?.msg || '鉴权失败');
 			} else {
 				// 打开登录弹窗
 				useStoreMain().triggerAuth(true);
 			}
+		} else if (response?.status) {
+			// 检查是否是HTML响应
+			const contentType = response.headers?.['content-type'] || '';
+			if (contentType.includes('text/html')) {
+				window.$message.error('服务器连接异常，请稍后重试');
+			} else {
+				window.$message.error(response?.data?.msg || '请求失败');
+			}
 		} else {
-			window.$message.error(response?.data?.msg || '请求失败');
+			window.$message.error('网络连接失败，请检查网络设置');
 		}
 		return Promise.reject(response?.data || {});
 	},
