@@ -179,3 +179,17 @@ export const resetPassword = (data) => {
     data: data
   })
 }
+
+// MFA 相关接口
+export const getMfaStatus = () => {
+  return service({ url: '/user/mfaStatus', method: 'get' })
+}
+export const bindMfa = (data) => {
+  return service({ url: '/user/mfaBind', method: 'post', data })
+}
+export const unbindMfa = (data) => {
+  return service({ url: '/user/mfaUnbind', method: 'post', data })
+}
+export const mfaLogin = (data) => {
+  return service({ url: '/base/mfaLogin', method: 'post', data })
+}

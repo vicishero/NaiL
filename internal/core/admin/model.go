@@ -376,3 +376,34 @@ type CaptchaResp struct {
 	CaptchaId string `json:"captchaId"` // 验证码ID
 	PicPath   string `json:"picPath"`   // base64图片内容
 }
+
+// MfaStatusResp MFA状态响应
+type MfaStatusResp struct {
+	Bound   bool   `json:"bound"`   // 是否已绑定MFA
+	Secret  string `json:"secret"`  // MFA密钥(未绑定时返回新生成的)
+	QrURI   string `json:"qrUri"`   // 二维码URI
+	SystemEnabled bool `json:"systemEnabled"` // 系统MFA开关
+}
+
+// MfaBindReq 绑定MFA请求
+type MfaBindReq struct {
+	Code string `json:"code" binding:"required"` // 验证码
+}
+
+// MfaVerifyReq 验证MFA请求
+type MfaVerifyReq struct {
+	Username string `json:"username" binding:"required"` // 用户名
+	Code     string `json:"code" binding:"required"`     // MFA验证码
+	MfaToken string `json:"mfaToken" binding:"required"` // 临时MFA token
+}
+
+// MfaUnbindReq 解绑MFA请求
+type MfaUnbindReq struct {
+	Code string `json:"code" binding:"required"` // 当前验证码
+}
+
+// MfaRequiredResp MFA认证要求响应(登录时MFA开关开启且用户已绑定MFA)
+type MfaRequiredResp struct {
+	MfaRequired bool   `json:"mfaRequired"` // 是否需要MFA验证
+	MfaToken    string `json:"mfaToken"`    // 临时token用于MFA验证
+}

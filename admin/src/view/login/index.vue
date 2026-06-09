@@ -70,14 +70,26 @@
                   </div>
                 </div>
               </el-form-item>
+              <el-form-item v-if="mfaRequired" prop="mfaCode" class="mb-6">
+                <el-input
+                  v-model="loginFormData.mfaCode"
+                  size="large"
+                  placeholder="请输入MFA验证码"
+                  maxlength="6"
+                />
+              </el-form-item>
               <el-form-item class="mb-6">
                 <el-button
                   class="shadow shadow-active h-11 w-full"
                   type="primary"
                   size="large"
+                  :loading="loginLoading"
                   @click="submitForm"
-                  >登 录</el-button
+                  >{{ mfaRequired ? '验证MFA' : '登 录' }}</el-button
                 >
+              </el-form-item>
+              <el-form-item v-if="mfaRequired" class="mb-6">
+                <el-button text type="primary" size="small" @click="resetMfa">返回密码登录</el-button>
               </el-form-item>
             </el-form>
           </div>
@@ -115,13 +127,13 @@
 </template>
 
 <script setup>
-  import { captcha } from '@/api/user'
+  import { captcha, mfaLogin } from '@/api/user'
     import BottomInfo from '@/components/bottomInfo/bottomInfo.vue'
   import { reactive, ref } from 'vue'
   import { ElMessage } from 'element-plus'
     import { useUserStore } from '@/pinia/modules/user'
   import Logo from '@/components/logo/index.vue'
-  
+
   defineOptions({
     name: 'Login'
   })
@@ -177,12 +189,16 @@
   // 登录相关操作
   const loginForm = ref(null)
   const picPath = ref('')
+  const mfaRequired = ref(false)
+  const mfaToken = ref('')
+  const loginLoading = ref(false)
   const loginFormData = reactive({
     username: 'admin',
     password: '',
     captcha: '',
     captchaId: '',
-    openCaptcha: false
+    openCaptcha: false,
+    mfaCode: ''
   })
   const rules = reactive({
     username: [{ validator: checkUsername, trigger: 'blur' }],
@@ -191,32 +207,56 @@
   })
 
   const userStore = useUserStore()
+  const resetMfa = () => {
+    mfaRequired.value = false
+    mfaToken.value = ''
+    loginFormData.mfaCode = ''
+  }
   const login = async () => {
     return await userStore.LoginIn(loginFormData)
   }
   const submitForm = () => {
     loginForm.value.validate(async (v) => {
       if (!v) {
-        // 未通过前端静态验证
-        ElMessage({
-          type: 'error',
-          message: '请正确填写登录信息',
-          showClose: true
-        })
+        ElMessage({ type: 'error', message: '请正确填写登录信息', showClose: true })
         return false
       }
+      loginLoading.value = true
+      try {
+        if (mfaRequired.value) {
+          // MFA验证步骤
+          const res = await mfaLogin({
+            username: loginFormData.username,
+            code: loginFormData.mfaCode,
+            mfaToken: mfaToken.value
+          })
+          if (res.code === 0) {
+            userStore.SetUserInfo(res.data.user)
+            userStore.setToken(res.data.token)
+            await userStore.LoginInAfter()
+            return true
+          }
+          ElMessage({ type: 'error', message: res.msg || 'MFA验证失败', showClose: true })
+          return false
+        }
 
-      // 通过验证，请求登陆
-      const flag = await login()
-
-      // 登陆失败，刷新验证码
-      if (!flag) {
-        await loginVerify()
-        return false
+        // 密码登录步骤
+        const flag = await login()
+        if (flag === 'mfa') {
+          // 需要MFA验证
+          mfaRequired.value = true
+          mfaToken.value = userStore.mfaToken
+          loginFormData.mfaCode = ''
+          return false
+        }
+        if (!flag) {
+          await loginVerify()
+          return false
+        }
+        return true
+      } finally {
+        loginLoading.value = false
       }
-
-      // 登陆成功
-      return true
     })
   }
 </script>

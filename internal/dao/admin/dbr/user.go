@@ -21,6 +21,8 @@ type SysUser struct {
 	Phone       string    `gorm:"column:phone" json:"phone"`
 	Email       string    `gorm:"column:email" json:"email"`
 	Enable      int       `gorm:"column:enable" json:"enable"`
+	MfaSecret   string    `gorm:"column:mfa_secret" json:"mfaSecret"`
+	MfaBound    int       `gorm:"column:mfa_bound" json:"mfaBound"`
 }
 
 func (SysUser) TableName() string { return "sys_users" }

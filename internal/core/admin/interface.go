@@ -16,6 +16,21 @@ type AdminService interface {
 	// Login 管理员登录
 	Login(ctx context.Context, username, password string) (*LoginResp, error)
 
+	// LoginMfa MFA认证登录(第二步)
+	LoginMfa(ctx context.Context, username, code, mfaToken string) (*LoginResp, error)
+
+	// GetMfaStatus 获取MFA状态
+	GetMfaStatus(ctx context.Context, userId uint) (*MfaStatusResp, error)
+
+	// BindMfa 绑定MFA
+	BindMfa(ctx context.Context, userId uint, code string) error
+
+	// UnbindMfa 解绑MFA
+	UnbindMfa(ctx context.Context, userId uint, code string) error
+
+	// IsMfaSystemEnabled 检查系统MFA开关
+	IsMfaSystemEnabled() bool
+
 	// Logout 管理员退出登录
 	Logout(ctx context.Context, userId uint, token string) error
 

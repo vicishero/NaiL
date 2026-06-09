@@ -16,6 +16,8 @@ import (
 	"github.com/afocus/captcha"
 	"github.com/gofrs/uuid/v5"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v4"
+	"github.com/rocboss/paopao-ce/internal/conf"
 	"github.com/rocboss/paopao-ce/internal/core/admin"
 	"github.com/rocboss/paopao-ce/internal/dao/admin/dbr"
 	"github.com/rocboss/paopao-ce/internal/dao/cache"
@@ -57,6 +59,30 @@ func (s *AuthServant) Login(c *gin.Context) {
 	resp, err := s.service.Login(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
 		app.NewResponse(c).ToErrorResponse(xerror.UnauthorizedAuthFailed.WithDetails(err.Error()))
+		return
+	}
+
+	// 检查MFA: 系统开关开启 且 用户已绑定MFA
+	if s.service.IsMfaSystemEnabled() && resp.User.MfaBound == 1 {
+		// 生成临时MFA验证token(5分钟有效)
+		mfaClaims := jwt.RegisteredClaims{
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			Issuer:    conf.JWTSetting.Issuer,
+			Subject:   req.Username,
+			ID:        "mfa",
+		}
+		mfaToken := jwt.NewWithClaims(jwt.SigningMethodHS256, mfaClaims)
+		mfaTokenStr, err := mfaToken.SignedString([]byte(conf.JWTSetting.Secret))
+		if err != nil {
+			app.NewResponse(c).ToErrorResponse(xerror.ServerError.WithDetails("生成MFA token失败"))
+			return
+		}
+		app.NewResponse(c).ToResponse(gin.H{
+			"mfaRequired": true,
+			"mfaToken":    mfaTokenStr,
+			"username":    req.Username,
+		})
 		return
 	}
 

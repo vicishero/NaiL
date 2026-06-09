@@ -136,6 +136,22 @@
                 修改
               </el-button>
             </div>
+            <div
+              class="flex items-center gap-1 lg:gap-3 text-gray-600 dark:text-gray-300"
+            >
+              <el-icon class="text-orange-500"><shield /></el-icon>
+              <span class="font-medium">MFA认证：</span>
+              <el-tag v-if="mfaBound" type="success" size="small">已绑定</el-tag>
+              <el-tag v-else type="info" size="small">未绑定</el-tag>
+              <el-button
+                link
+                type="primary"
+                class="ml-auto"
+                @click="showMfaDialog = true"
+              >
+                {{ mfaBound ? '管理' : '绑定' }}
+              </el-button>
+            </div>
           </div>
         </div>
 
@@ -310,6 +326,57 @@
       </template>
     </el-dialog>
 
+    <!-- MFA 绑定/管理弹窗 -->
+    <el-dialog
+      v-model="showMfaDialog"
+      :title="mfaBound ? 'MFA 管理' : '绑定 MFA 两步验证'"
+      width="440px"
+      class="custom-dialog"
+      @open="loadMfaStatus"
+    >
+      <div class="py-4">
+        <!-- 已绑定状态 -->
+        <template v-if="mfaBound">
+          <el-alert type="success" :closable="false" show-icon title="MFA 已启用" description="您的账号已绑定两步验证，登录时需要输入6位验证码" style="margin-bottom:20px" />
+          <el-form label-width="80px">
+            <el-form-item label="验证码">
+              <el-input v-model="mfaUnbindCode" placeholder="输入当前验证码以解绑" maxlength="6" />
+            </el-form-item>
+            <el-form-item>
+              <el-button type="danger" :loading="mfaLoading" @click="doUnbindMfa">解除绑定</el-button>
+            </el-form-item>
+          </el-form>
+        </template>
+        <!-- 未绑定状态 -->
+        <template v-else>
+          <el-steps :active="mfaStep" align-center style="margin-bottom:24px">
+            <el-step title="扫描二维码" />
+            <el-step title="验证绑定" />
+          </el-steps>
+          <!-- 步骤1: 扫码 -->
+          <div v-if="mfaStep === 0" style="text-align:center">
+            <p style="margin-bottom:16px;color:#606266">使用 Google Authenticator 等应用扫描二维码</p>
+            <div style="display:inline-block;padding:12px;background:#fff;border:1px solid #e4e7ed;border-radius:8px">
+              <qrcode-vue v-if="mfaQrUri" :value="mfaQrUri" :size="200" level="H" />
+            </div>
+            <p style="margin-top:12px;font-size:13px;color:#909399">
+              手动输入密钥：<code style="background:#f5f7fa;padding:2px 6px;border-radius:4px;user-select:all">{{ mfaSecret }}</code>
+            </p>
+            <el-button type="primary" style="margin-top:16px" @click="mfaStep = 1">下一步</el-button>
+          </div>
+          <!-- 步骤2: 验证 -->
+          <div v-if="mfaStep === 1" style="text-align:center">
+            <p style="margin-bottom:16px;color:#606266">输入应用中显示的6位验证码</p>
+            <el-input v-model="mfaBindCode" placeholder="000000" maxlength="6" style="width:160px;text-align:center;font-size:24px;letter-spacing:8px" />
+            <div style="margin-top:20px">
+              <el-button @click="mfaStep = 0">上一步</el-button>
+              <el-button type="primary" :loading="mfaLoading" @click="doBindMfa">验证并绑定</el-button>
+            </div>
+          </div>
+        </template>
+      </div>
+    </el-dialog>
+
     <el-dialog
       v-model="changeEmailFlag"
       title="修改邮箱"
@@ -357,11 +424,12 @@
 </template>
 
 <script setup>
-  import { setSelfInfo, changePassword } from '@/api/user.js'
+  import { setSelfInfo, changePassword, getMfaStatus, bindMfa, unbindMfa } from '@/api/user.js'
   import { reactive, ref, watch } from 'vue'
   import { ElMessage } from 'element-plus'
   import { useUserStore } from '@/pinia/modules/user'
   import SelectImage from '@/components/selectImage/selectImage.vue'
+  import QrcodeVue from 'qrcode.vue'
   defineOptions({
     name: 'Person'
   })
@@ -372,6 +440,66 @@
   const pwdModify = ref({})
   const nickName = ref('')
   const editFlag = ref(false)
+
+  // MFA 相关
+  const showMfaDialog = ref(false)
+  const mfaBound = ref(false)
+  const mfaSecret = ref('')
+  const mfaQrUri = ref('')
+  const mfaStep = ref(0)
+  const mfaBindCode = ref('')
+  const mfaUnbindCode = ref('')
+  const mfaLoading = ref(false)
+
+  const loadMfaStatus = async () => {
+    try {
+      const res = await getMfaStatus()
+      if (res.code === 0 && res.data) {
+        mfaBound.value = res.data.bound
+        if (!res.data.bound) {
+          mfaSecret.value = res.data.secret
+          mfaQrUri.value = res.data.qrUri
+          mfaStep.value = 0
+        }
+      }
+    } catch { /* ignore */ }
+  }
+
+  const doBindMfa = async () => {
+    if (!mfaBindCode.value || mfaBindCode.value.length !== 6) {
+      ElMessage.warning('请输入6位验证码')
+      return
+    }
+    mfaLoading.value = true
+    try {
+      const res = await bindMfa({ code: mfaBindCode.value })
+      if (res.code === 0) {
+        ElMessage.success('MFA绑定成功')
+        mfaBound.value = true
+        mfaBindCode.value = ''
+        showMfaDialog.value = false
+      }
+    } catch { /* ignore */ }
+    finally { mfaLoading.value = false }
+  }
+
+  const doUnbindMfa = async () => {
+    if (!mfaUnbindCode.value || mfaUnbindCode.value.length !== 6) {
+      ElMessage.warning('请输入6位验证码')
+      return
+    }
+    mfaLoading.value = true
+    try {
+      const res = await unbindMfa({ code: mfaUnbindCode.value })
+      if (res.code === 0) {
+        ElMessage.success('MFA已解绑')
+        mfaBound.value = false
+        mfaUnbindCode.value = ''
+        showMfaDialog.value = false
+      }
+    } catch { /* ignore */ }
+    finally { mfaLoading.value = false }
+  }
 
   const rules = reactive({
     password: [

@@ -59,6 +59,9 @@ export const useUserStore = defineStore('user', () => {
     }
     return res
   }
+  const mfaToken = ref('')
+  const mfaUsername = ref('')
+
   /* 登录*/
   const LoginIn = async (loginInfo) => {
     try {
@@ -72,6 +75,15 @@ export const useUserStore = defineStore('user', () => {
       if (res.code !== 0) {
         return false
       }
+
+      // 检查是否需要MFA验证
+      if (res.data?.mfaRequired) {
+        mfaToken.value = res.data.mfaToken
+        mfaUsername.value = res.data.username
+        loadingInstance.value?.close()
+        return 'mfa'
+      }
+
       // 登陆成功，设置用户信息和权限相关信息
       setUserInfo(res.data.user)
       setToken(res.data.token)
@@ -109,6 +121,25 @@ export const useUserStore = defineStore('user', () => {
       loadingInstance.value?.close()
     }
   }
+
+  /* MFA登录成功后的后续处理 */
+  const LoginInAfter = async () => {
+    const res = await getUserInfo()
+    if (res.code === 0) {
+      setUserInfo(res.data.userInfo)
+    }
+    const routerStore = useRouterStore()
+    await routerStore.SetAsyncRouter()
+    const asyncRouters = routerStore.asyncRouters
+    asyncRouters.forEach((asyncRouter) => {
+      router.addRoute(asyncRouter)
+    })
+    if (!router.hasRoute(userInfo.value.authority?.defaultRouter)) {
+      ElMessage.error('不存在可以登陆的首页，请联系管理员进行配置')
+    } else {
+      await router.replace({ name: userInfo.value.authority.defaultRouter })
+    }
+  }
   /* 登出*/
   const LoginOut = async () => {
     // 先清除本地存储，确保即使用户强制刷新也不会保留token
@@ -138,11 +169,15 @@ export const useUserStore = defineStore('user', () => {
   return {
     userInfo,
     token: currentToken,
+    mfaToken,
+    mfaUsername,
     NeedInit,
     ResetUserInfo,
     GetUserInfo,
     LoginIn,
+    LoginInAfter,
     LoginOut,
+    SetUserInfo: setUserInfo,
     setToken,
     loadingInstance,
     ClearStorage

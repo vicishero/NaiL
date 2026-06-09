@@ -79,6 +79,175 @@ func (s *adminService) Logout(ctx context.Context, userId uint, token string) er
 	return nil
 }
 
+// ====== MFA 多因素认证 ======
+
+// IsMfaSystemEnabled 检查系统MFA开关是否开启
+func (s *adminService) IsMfaSystemEnabled() bool {
+	cfg, _ := s.GetSystemConfig(context.Background())
+	if v, ok := cfg.Config["mfa_enabled"]; ok {
+		switch val := v.(type) {
+		case bool:
+			return val
+		case float64:
+			return val == 1
+		case string:
+			return val == "true" || val == "1"
+		}
+	}
+	return false
+}
+
+// generateMfaToken 生成临时MFA验证token(5分钟有效)
+func (s *adminService) generateMfaToken(username string) (string, error) {
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    s.jwtIssuer,
+		Subject:   username,
+		ID:        "mfa",
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	return token.SignedString(s.jwtSecret)
+}
+
+// verifyMfaToken 验证临时MFA token
+func (s *adminService) verifyMfaToken(tokenString string) (string, error) {
+	claims := jwt.RegisteredClaims{}
+	token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
+		return s.jwtSecret, nil
+	})
+	if err != nil || !token.Valid {
+		return "", fmt.Errorf("MFA token无效或已过期")
+	}
+	if claims.ID != "mfa" {
+		return "", fmt.Errorf("非MFA token")
+	}
+	return claims.Subject, nil
+}
+
+// LoginMfa MFA认证登录(第二步)
+func (s *adminService) LoginMfa(ctx context.Context, username, code, mfaToken string) (*admin.LoginResp, error) {
+	// 验证临时MFA token
+	tokenUser, err := s.verifyMfaToken(mfaToken)
+	if err != nil {
+		return nil, err
+	}
+	if tokenUser != username {
+		return nil, fmt.Errorf("MFA token与用户不匹配")
+	}
+
+	// 查询用户
+	user, err := s.dao.GetUserByUsername(ctx, username)
+	if err != nil {
+		return nil, fmt.Errorf("用户不存在")
+	}
+
+	// 验证MFA码
+	if user.MfaSecret == "" || user.MfaBound == 0 {
+		return nil, fmt.Errorf("用户未绑定MFA")
+	}
+	ok, err := VerifyTOTP(user.MfaSecret, code)
+	if err != nil || !ok {
+		return nil, fmt.Errorf("MFA验证码错误")
+	}
+
+	// 生成正式JWT token
+	expiresAt := time.Now().Add(s.jwtExpire)
+	claims := jwt.RegisteredClaims{
+		ExpiresAt: jwt.NewNumericDate(expiresAt),
+		IssuedAt:  jwt.NewNumericDate(time.Now()),
+		Issuer:    s.jwtIssuer,
+		Subject:   strconv.Itoa(int(user.ID)),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+	tokenString, err := token.SignedString(s.jwtSecret)
+	if err != nil {
+		return nil, fmt.Errorf("生成token失败: %v", err)
+	}
+
+	return &admin.LoginResp{
+		User:      user,
+		Token:     tokenString,
+		ExpiresAt: expiresAt.Unix(),
+	}, nil
+}
+
+// GetMfaStatus 获取MFA状态
+func (s *adminService) GetMfaStatus(ctx context.Context, userId uint) (*admin.MfaStatusResp, error) {
+	user, err := s.dao.GetUserByID(ctx, userId)
+	if err != nil {
+		return nil, err
+	}
+
+	sysEnabled := s.IsMfaSystemEnabled()
+	bound := user.MfaBound == 1 && user.MfaSecret != ""
+
+	resp := &admin.MfaStatusResp{
+		Bound:         bound,
+		SystemEnabled: sysEnabled,
+	}
+
+	// 如果未绑定，生成新密钥供前端展示二维码
+	if !bound {
+		secret, err := GenerateMFASecret()
+		if err != nil {
+			return nil, fmt.Errorf("生成MFA密钥失败: %v", err)
+		}
+		resp.Secret = secret
+		resp.QrURI = GetTOTPURI(secret, user.Username, "NaiL-Admin")
+	}
+
+	return resp, nil
+}
+
+// BindMfa 绑定MFA
+func (s *adminService) BindMfa(ctx context.Context, userId uint, code string) error {
+	// 获取当前用户的MFA状态（获取未绑定时生成的secret）
+	status, err := s.GetMfaStatus(ctx, userId)
+	if err != nil {
+		return err
+	}
+	if status.Bound {
+		return fmt.Errorf("MFA已绑定")
+	}
+
+	// 验证验证码
+	ok, err := VerifyTOTP(status.Secret, code)
+	if err != nil || !ok {
+		return fmt.Errorf("验证码错误")
+	}
+
+	// 保存secret到用户记录
+	user, err := s.dao.GetUserByID(ctx, userId)
+	if err != nil {
+		return err
+	}
+	user.MfaSecret = status.Secret
+	user.MfaBound = 1
+	return s.dao.UpdateUser(ctx, user)
+}
+
+// UnbindMfa 解绑MFA
+func (s *adminService) UnbindMfa(ctx context.Context, userId uint, code string) error {
+	user, err := s.dao.GetUserByID(ctx, userId)
+	if err != nil {
+		return err
+	}
+	if user.MfaSecret == "" || user.MfaBound == 0 {
+		return fmt.Errorf("MFA未绑定")
+	}
+
+	// 验证当前验证码
+	ok, err := VerifyTOTP(user.MfaSecret, code)
+	if err != nil || !ok {
+		return fmt.Errorf("验证码错误")
+	}
+
+	user.MfaSecret = ""
+	user.MfaBound = 0
+	return s.dao.UpdateUser(ctx, user)
+}
+
 // GetUserInfo 获取用户详细信息，包含权限和角色
 func (s *adminService) GetUserInfo(ctx context.Context, userId uint) (*admin.UserInfoResp, error) {
 	// 查询用户信息
@@ -798,6 +967,7 @@ func (s *adminService) GetSystemConfig(ctx context.Context) (*admin.GetSystemCon
 			"default_avatar": "/static/avatar.png",
 			"max_upload_size": 10,
 			"allowed_upload_types": []string{"jpg", "jpeg", "png", "gif", "mp4", "avi", "mov"},
+			"mfa_enabled": true,
 		},
 	}, nil
 }

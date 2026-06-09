@@ -27,6 +27,7 @@ func RegisterAdminRoutes(e *gin.Engine, basePath string) {
 	{
 		baseGroup.POST("/captcha", s.Captcha)
 		baseGroup.POST("/login", s.Login)
+		baseGroup.POST("/mfaLogin", s.MfaVerify)
 	}
 	// JWT黑名单接口（退出登录用，无需认证）
 	adminGroup.POST("/jwt/jsonInBlacklist", s.JsonInBlacklist)
@@ -39,6 +40,9 @@ func RegisterAdminRoutes(e *gin.Engine, basePath string) {
 		authGroup.POST("/user/logout", s.Logout)
 		authGroup.GET("/user/getUserInfo", s.GetUserInfo)
 		authGroup.POST("/user/changePassword", s.ChangePassword)
+		authGroup.GET("/user/mfaStatus", s.MfaStatus)
+		authGroup.POST("/user/mfaBind", s.MfaBind)
+		authGroup.POST("/user/mfaUnbind", s.MfaUnbind)
 
 		// ---- 菜单（auth级别，登录即可获取） ----
 		registerGetPost(authGroup, "/menu/getMenuList", s.GetMenuList)
