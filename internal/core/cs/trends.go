@@ -7,6 +7,7 @@ package cs
 import "github.com/rocboss/paopao-ce/pkg/types"
 
 type TrendsItem struct {
+	ID       int64  `json:"id,string"`
 	Username string `json:"username"`
 	Nickname string `json:"nickname"`
 	Avatar   string `json:"avatar"`
