@@ -138,6 +138,21 @@ type AdminService interface {
 	GetH5User(ctx context.Context, userID int64) (*H5UserItem, error)
 	UpdateH5User(ctx context.Context, req *H5UserUpdateReq) error
 	DeleteH5User(ctx context.Context, userID int64) error
+
+	// H5运维贴文管理
+	GetH5PostList(ctx context.Context, req *H5PostListReq) (int64, []H5PostItem, error)
+	GetH5Post(ctx context.Context, postID int64) (*H5PostItem, error)
+	UpdateH5Post(ctx context.Context, req *H5PostUpdateReq) error
+	DeleteH5Post(ctx context.Context, postID int64) error
+
+	// H5运维话题管理
+	GetH5TagList(ctx context.Context, req *H5TagListReq) (int64, []H5TagItem, error)
+	UpdateH5Tag(ctx context.Context, req *H5TagUpdateReq) error
+	DeleteH5Tag(ctx context.Context, tagID int64) error
+
+	// H5运维评论管理
+	GetH5CommentList(ctx context.Context, req *H5CommentListReq) (int64, []H5CommentItem, error)
+	DeleteH5Comment(ctx context.Context, commentID int64) error
 }
 
 // AdminDao 管理后台数据访问接口

@@ -86,6 +86,13 @@ func (s *userManageSrv) GetUserByPhone(phone string) (*ms.User, error) {
 	return user.Get(s.db)
 }
 
+func (s *userManageSrv) GetUserByAddress(address string) (*ms.User, error) {
+	user := &dbr.User{
+		Address: address,
+	}
+	return user.Get(s.db)
+}
+
 func (s *userManageSrv) GetUsersByIDs(ids []int64) ([]*ms.User, error) {
 	user := &dbr.User{}
 	return user.List(s.db, &dbr.ConditionsT{

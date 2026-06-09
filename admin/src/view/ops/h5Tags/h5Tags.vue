@@ -1,19 +1,15 @@
 <template>
   <div>
     <div class="gva-search-box">
-      <el-form ref="searchForm" :inline="true" :model="searchInfo">
-        <el-form-item label="话题名">
-          <el-input v-model="searchInfo.keyword" placeholder="搜索话题" />
-        </el-form-item>
+      <el-form :inline="true">
         <el-form-item>
-          <el-button type="primary" icon="search" @click="onSearch">查询</el-button>
-          <el-button icon="refresh" @click="onReset">重置</el-button>
+          <el-button type="primary" icon="refresh" @click="onReset">刷新</el-button>
         </el-form-item>
       </el-form>
     </div>
     <div class="gva-table-box">
       <el-table :data="tableData" row-key="ID">
-        <el-table-column align="left" label="ID" min-width="60" prop="ID" />
+        <el-table-column align="left" label="ID" width="170" prop="ID" />
         <el-table-column align="left" label="话题" min-width="150" prop="tag">
           <template #default="scope">#{{ scope.row.tag }}</template>
         </el-table-column>
@@ -24,7 +20,6 @@
         </el-table-column>
         <el-table-column label="操作" min-width="150" fixed="right">
           <template #default="scope">
-            <el-button type="primary" link icon="edit" @click="editTag(scope.row)">编辑</el-button>
             <el-button type="primary" link icon="delete" @click="deleteFunc(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -62,27 +57,39 @@
 
 <script setup>
 import { getH5TagList, updateH5Tag, deleteH5Tag } from '@/api/h5Admin'
-import { ref, reactive } from 'vue'
+import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/format'
 
 defineOptions({ name: 'h5Tags' })
 
 const page = ref(1), total = ref(0), pageSize = ref(10), tableData = ref([])
-const searchInfo = reactive({ keyword: '' })
 const drawerVisible = ref(false)
 const form = ref({ ID: 0, tag: '', quoteNum: 0 })
 
 const getTableData = async () => {
   const params = { page: page.value, pageSize: pageSize.value }
-  if (searchInfo.keyword) params.keyword = searchInfo.keyword
-  const res = await getH5TagList(params)
-  if (res.code === 0) { tableData.value = res.data.list; total.value = res.data.total }
+  try {
+    const res = await getH5TagList(params)
+    console.log('h5Tags getTableData response:', JSON.stringify(res))
+    if (res && res.code === 0) {
+      tableData.value = res.data?.list || []
+      total.value = res.data?.total || 0
+      console.log('h5Tags loaded:', total.value, 'items')
+    } else {
+      console.warn('h5Tags unexpected response:', res)
+      tableData.value = []
+      total.value = 0
+    }
+  } catch (err) {
+    console.error('h5Tags getTableData error:', err)
+    tableData.value = []
+    total.value = 0
+  }
 }
 getTableData()
 
-const onSearch = () => { page.value = 1; getTableData() }
-const onReset = () => { searchInfo.keyword = ''; page.value = 1; getTableData() }
+const onReset = () => { page.value = 1; getTableData() }
 const handleSizeChange = (v) => { pageSize.value = v; getTableData() }
 const handleCurrentChange = (v) => { page.value = v; getTableData() }
 

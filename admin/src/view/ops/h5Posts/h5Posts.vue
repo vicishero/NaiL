@@ -2,9 +2,6 @@
   <div>
     <div class="gva-search-box">
       <el-form ref="searchForm" :inline="true" :model="searchInfo">
-        <el-form-item label="关键词">
-          <el-input v-model="searchInfo.keyword" placeholder="搜索内容" />
-        </el-form-item>
         <el-form-item label="用户ID">
           <el-input v-model="searchInfo.userId" placeholder="用户ID" style="width:120px" />
         </el-form-item>
@@ -23,7 +20,7 @@
     </div>
     <div class="gva-table-box">
       <el-table :data="tableData" row-key="ID" :default-sort="{ prop: 'ID', order: 'descending' }">
-        <el-table-column align="left" label="ID" min-width="60" prop="ID" />
+        <el-table-column align="left" label="ID" width="170" prop="ID" />
         <el-table-column align="left" label="用户" min-width="120">
           <template #default="scope">{{ scope.row.user?.nickname || `ID:${scope.row.userId}` }}</template>
         </el-table-column>
@@ -52,7 +49,6 @@
         <el-table-column label="操作" min-width="180" fixed="right">
           <template #default="scope">
             <el-button type="primary" link icon="view" @click="viewPost(scope.row)">查看</el-button>
-            <el-button type="primary" link icon="edit" @click="editPost(scope.row)">编辑</el-button>
             <el-button type="primary" link icon="delete" @click="deletePostFunc(scope.row)">删除</el-button>
           </template>
         </el-table-column>
@@ -69,7 +65,7 @@
     <el-drawer v-model="drawerVisible" :before-close="closeDrawer" :show-close="false" size="500px">
       <template #header>
         <div class="flex justify-between items-center">
-          <span class="text-lg">编辑贴文</span>
+          <span class="text-lg">贴文详情</span>
           <div>
             <el-button @click="closeDrawer">取消</el-button>
             <el-button type="primary" @click="savePost">确定</el-button>
@@ -83,32 +79,50 @@
             <el-option label="私密" :value="0" />
           </el-select>
         </el-form-item>
-        <el-form-item label="置顶">
-          <el-switch v-model="form.isTop" />
-        </el-form-item>
-        <el-form-item label="精选">
-          <el-switch v-model="form.isEssence" />
-        </el-form-item>
-        <el-form-item label="锁定">
-          <el-switch v-model="form.isLock" />
+        <el-form-item label="标记">
+          <div style="display:flex;gap:24px">
+            <span><el-switch v-model="form.isTop" /> 置顶</span>
+            <span><el-switch v-model="form.isEssence" /> 精选</span>
+            <span><el-switch v-model="form.isLock" /> 锁定</span>
+          </div>
         </el-form-item>
         <el-form-item v-if="currentPost?.contents?.length" label="内容预览">
-          <div style="max-height:400px;overflow-y:auto">
-            <div v-for="(c, i) in currentPost.contents" :key="i" style="margin-bottom:12px;padding:8px;background:#f7f9f9;border-radius:8px">
-              <el-tag size="small" style="margin-bottom:4px">{{ ['', '标题','文本','图片','视频','音频','链接','附件'][c.type] || c.type }}</el-tag>
-              <p v-if="c.type <= 2" style="white-space:pre-wrap;word-break:break-word">{{ c.content }}</p>
-              <el-image v-else-if="c.type === 3" :src="c.content" style="max-width:100%;max-height:200px" fit="contain" />
-              <span v-else style="word-break:break-all;font-size:12px;color:#536471">{{ c.content }}</span>
+          <div style="max-height:400px;overflow-y:auto;width:100%">
+            <div v-for="(c, i) in currentPost.contents" :key="i" style="margin-bottom:12px">
+              <!-- 标题 -->
+              <div v-if="c.type === 1" style="font-size:20px;font-weight:700;line-height:1.3;margin-bottom:4px">{{ c.content }}</div>
+              <!-- 文本 -->
+              <div v-else-if="c.type === 2" style="font-size:15px;line-height:1.6;white-space:pre-wrap;word-break:break-word;color:#0f1419">{{ c.content }}</div>
+              <!-- 图片 -->
+              <el-image v-else-if="c.type === 3" :src="c.content" style="max-width:100%;border-radius:12px" fit="contain" :preview-src-list="[c.content]" />
+              <!-- 视频/音频/链接/附件 -->
+              <div v-else style="padding:10px 14px;background:#f7f9f9;border-radius:10px;border:1px solid #eff3f4">
+                <span style="font-size:13px;color:#536471">{{ ['','标题','文本','图片','视频','音频','链接','附件'][c.type] || `类型${c.type}` }}</span>
+                <div style="font-size:14px;word-break:break-all;color:#1d9bf0;margin-top:2px">{{ c.content }}</div>
+              </div>
             </div>
           </div>
         </el-form-item>
+        <!-- 评论列表 -->
+        <el-divider />
+        <div style="font-size:15px;font-weight:600;margin-bottom:12px">评论 ({{ comments.length }})</div>
+        <div v-loading="commentsLoading" style="max-height:300px;overflow-y:auto">
+          <div v-if="comments.length === 0 && !commentsLoading" style="color:#909399;text-align:center;padding:20px">暂无评论</div>
+          <div v-for="c in comments" :key="c.ID" style="padding:10px 0;border-bottom:1px solid #eff3f4">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+              <span style="font-weight:600;font-size:13px">{{ c.nickname || `用户${c.userId}` }}</span>
+              <span style="font-size:12px;color:#909399">{{ c.CreatedAt }}</span>
+            </div>
+            <div style="font-size:14px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:#0f1419">{{ c.content }}</div>
+          </div>
+        </div>
       </el-form>
     </el-drawer>
   </div>
 </template>
 
 <script setup>
-import { getH5PostList, getH5Post, updateH5Post, deleteH5Post, syncH5Index } from '@/api/h5Admin'
+import { getH5PostList, getH5Post, updateH5Post, deleteH5Post, syncH5Index, getH5CommentList, deleteH5Comment } from '@/api/h5Admin'
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/format'
@@ -116,32 +130,59 @@ import { formatDate } from '@/utils/format'
 defineOptions({ name: 'h5Posts' })
 
 const page = ref(1), total = ref(0), pageSize = ref(10), tableData = ref([])
-const searchInfo = reactive({ keyword: '', userId: '', visibility: undefined })
+const searchInfo = reactive({ userId: '', visibility: undefined })
 const drawerVisible = ref(false), currentPost = ref(null), syncing = ref(false)
 const form = ref({ ID: 0, visibility: 90, isTop: false, isEssence: false, isLock: false })
+const comments = ref([]), commentsLoading = ref(false)
 
 const getTableData = async () => {
   const params = { page: page.value, pageSize: pageSize.value }
-  if (searchInfo.keyword) params.keyword = searchInfo.keyword
-  if (searchInfo.userId) params.userId = searchInfo.userId ? Number(searchInfo.userId) : undefined
+  if (searchInfo.userId) params.userId = Number(searchInfo.userId)
   if (searchInfo.visibility !== undefined && searchInfo.visibility !== '') params.visibility = searchInfo.visibility
-  const res = await getH5PostList(params)
-  if (res.code === 0) { tableData.value = res.data.list; total.value = res.data.total }
+  try {
+    const res = await getH5PostList(params)
+    console.log('h5Posts getTableData response:', JSON.stringify(res))
+    if (res && res.code === 0) {
+      tableData.value = res.data?.list || []
+      total.value = res.data?.total || 0
+      console.log('h5Posts loaded:', total.value, 'items')
+    } else {
+      console.warn('h5Posts unexpected response:', res)
+      tableData.value = []
+      total.value = 0
+    }
+  } catch (err) {
+    console.error('h5Posts getTableData error:', err)
+    tableData.value = []
+    total.value = 0
+  }
 }
 getTableData()
 
 const onSearch = () => { page.value = 1; getTableData() }
-const onReset = () => { searchInfo.keyword = ''; searchInfo.userId = ''; searchInfo.visibility = undefined; page.value = 1; getTableData() }
+const onReset = () => { searchInfo.userId = ''; searchInfo.visibility = undefined; page.value = 1; getTableData() }
 const onSyncIndex = async () => { syncing.value = true; try { await syncH5Index(); ElMessage.success('索引同步已启动'); } catch { ElMessage.error('同步失败'); } finally { syncing.value = false } }
 const handleSizeChange = (v) => { pageSize.value = v; getTableData() }
 const handleCurrentChange = (v) => { page.value = v; getTableData() }
 
 const viewPost = async (row) => {
   const res = await getH5Post({ ID: row.ID })
-  if (res.code === 0) { currentPost.value = res.data; form.value = { ID: res.data.ID, visibility: res.data.visibility, isTop: res.data.isTop, isEssence: res.data.isEssence, isLock: res.data.isLock }; drawerVisible.value = true }
+  if (res.code === 0) {
+    currentPost.value = res.data
+    form.value = { ID: res.data.ID, visibility: res.data.visibility, isTop: res.data.isTop, isEssence: res.data.isEssence, isLock: res.data.isLock }
+    drawerVisible.value = true
+    loadComments(res.data.ID)
+  }
 }
-const editPost = async (row) => { await viewPost(row) }
-const closeDrawer = () => { drawerVisible.value = false; currentPost.value = null }
+const loadComments = async (postId) => {
+  commentsLoading.value = true
+  try {
+    const res = await getH5CommentList({ postId, page: 1, pageSize: 50 })
+    if (res.code === 0) { comments.value = res.data?.list || [] }
+  } catch { comments.value = [] }
+  finally { commentsLoading.value = false }
+}
+const closeDrawer = () => { drawerVisible.value = false; currentPost.value = null; comments.value = [] }
 const savePost = async () => {
   const res = await updateH5Post(form.value)
   if (res.code === 0) { ElMessage.success('更新成功'); drawerVisible.value = false; getTableData() }

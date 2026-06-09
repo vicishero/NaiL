@@ -106,4 +106,8 @@ var (
 	ErrFileInvalidSize  = xerror.NewError(10202, "文件大小超限")
 
 	ErrNotImplemented = xerror.NewError(10501, "功能未实现")
+
+	// 钱包登录相关错误
+	ErrInvalidNonce     = xerror.NewError(10601, "无效的验证码")
+	ErrInvalidSignature = xerror.NewError(10602, "签名验证失败")
 )

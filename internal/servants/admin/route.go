@@ -46,6 +46,34 @@ func RegisterAdminRoutes(e *gin.Engine, basePath string) {
 
 		// ---- 通用GVA兼容接口（认证即可，无权限校验） ----
 		registerGvaAuthRoutes(authGroup, s)
+
+		// ---- H5运维管理后台（JWT认证即可，运维管理功能） ----
+		h5Group := authGroup.Group("/h5Admin")
+		{
+			// 用户管理
+			h5Group.GET("/userList", s.GetH5UserList)
+			h5Group.GET("/user", s.GetH5User)
+			h5Group.PUT("/user", s.UpdateH5User)
+			h5Group.DELETE("/user", s.DeleteH5User)
+			// 贴文管理
+			h5Group.GET("/postList", s.GetH5PostList)
+			h5Group.GET("/post", s.GetH5Post)
+			h5Group.PUT("/post", s.UpdateH5Post)
+			h5Group.DELETE("/post", s.DeleteH5Post)
+			h5Group.POST("/syncIndex", s.SyncSearchIndex)
+			// 话题管理
+			h5Group.GET("/tagList", s.GetH5TagList)
+			h5Group.PUT("/tag", s.UpdateH5Tag)
+			h5Group.DELETE("/tag", s.DeleteH5Tag)
+			h5Group.GET("/commentList", s.GetH5CommentList)
+			h5Group.DELETE("/comment", s.DeleteH5Comment)
+			h5Group.GET("/collectionList", GvaEmptyList)
+			h5Group.GET("/collection", GvaEmptyObject)
+			h5Group.DELETE("/collection", GvaSuccess)
+			h5Group.GET("/followingList", GvaEmptyList)
+			h5Group.GET("/following", GvaEmptyObject)
+			h5Group.DELETE("/following", GvaSuccess)
+		}
 	}
 
 	// ====== 需要权限校验的接口 ======
@@ -337,34 +365,6 @@ func registerGvaPermissionRoutes(g *gin.RouterGroup, s *AuthServant) {
 	{
 		bscEventGroup.GET("/getBscSyncedEventList", GvaEmptyList)
 		bscEventGroup.POST("/updateStatus", GvaSuccess)
-	}
-
-	// ---- H5运维管理后台 ----
-	h5Group := g.Group("/h5Admin")
-	{
-		// 用户管理
-		h5Group.GET("/userList", s.GetH5UserList)
-		h5Group.GET("/user", s.GetH5User)
-		h5Group.PUT("/user", s.UpdateH5User)
-		h5Group.DELETE("/user", s.DeleteH5User)
-		// 贴文/话题/收藏/关注 (TODO)
-		h5Group.GET("/postList", GvaEmptyList)
-		h5Group.GET("/post", GvaEmptyObject)
-		h5Group.PUT("/post", GvaSuccess)
-		h5Group.DELETE("/post", GvaSuccess)
-		h5Group.POST("/syncIndex", s.SyncSearchIndex)
-		h5Group.GET("/tagList", GvaEmptyList)
-		h5Group.GET("/tag", GvaEmptyObject)
-		h5Group.PUT("/tag", GvaSuccess)
-		h5Group.DELETE("/tag", GvaSuccess)
-		h5Group.GET("/commentList", GvaEmptyList)
-		h5Group.DELETE("/comment", GvaSuccess)
-		h5Group.GET("/collectionList", GvaEmptyList)
-		h5Group.GET("/collection", GvaEmptyObject)
-		h5Group.DELETE("/collection", GvaSuccess)
-		h5Group.GET("/followingList", GvaEmptyList)
-		h5Group.GET("/following", GvaEmptyObject)
-		h5Group.DELETE("/following", GvaSuccess)
 	}
 
 	// ---- 技能管理 ----

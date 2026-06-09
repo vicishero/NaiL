@@ -98,6 +98,9 @@ type RedisCache interface {
 	SetRechargeStatus(ctx context.Context, tradeNo string) error
 	DelRechargeStatus(ctx context.Context, tradeNo string) error
 	RateLimitAcquire(ctx context.Context, key string, limit int, duration time.Duration) (bool, int, error)
+	SetWalletNonce(ctx context.Context, address string, nonce string) error
+	GetWalletNonce(ctx context.Context, address string) (string, error)
+	DelWalletNonce(ctx context.Context, address string) error
 }
 
 type AppCache interface {

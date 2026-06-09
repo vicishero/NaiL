@@ -24,4 +24,10 @@ type Pub struct {
 
 	// SendCaptcha 发送验证码
 	SendCaptcha func(Post, web.SendCaptchaReq) `mir:"/captcha"`
+
+	// WalletNonce 获取钱包登录签名nonce
+	WalletNonce func(Post, web.WalletNonceReq) web.WalletNonceResp `mir:"/auth/walletNonce"`
+
+	// WalletLogin 钱包登录
+	WalletLogin func(Post, web.WalletLoginReq) web.WalletLoginResp `mir:"/auth/walletLogin"`
 }

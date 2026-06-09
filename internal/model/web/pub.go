@@ -33,3 +33,27 @@ type RegisterResp struct {
 	UserId   int64 `json:"id,string"`
 	Username string `json:"username"`
 }
+
+// WalletNonceReq 获取签名nonce请求
+type WalletNonceReq struct {
+	Address string `json:"address" form:"address" binding:"required"`
+}
+
+// WalletNonceResp 获取签名nonce响应
+type WalletNonceResp struct {
+	Nonce   string `json:"nonce"`
+	Message string `json:"message"`
+}
+
+// WalletLoginReq 钱包登录请求
+type WalletLoginReq struct {
+	Address   string `json:"address" form:"address" binding:"required"`
+	Signature string `json:"signature" form:"signature" binding:"required"`
+	Nonce     string `json:"nonce" form:"nonce" binding:"required"`
+}
+
+// WalletLoginResp 钱包登录响应
+type WalletLoginResp struct {
+	Token    string `json:"token"`
+	IsNewUser bool   `json:"is_new_user"` // 是否是新注册用户
+}

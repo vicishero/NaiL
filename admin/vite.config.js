@@ -43,8 +43,13 @@ export default ({ mode }) => {
     },
     server: {
       // 如果使用docker-compose开发模式，设置为false
+      host: '0.0.0.0',
       open: true,
       port: Number(env.VITE_CLI_PORT),
+      hmr: {
+        host: '192.168.30.44',
+        port: Number(env.VITE_CLI_PORT)
+      },
       proxy: {
         // 把key的路径代理到target位置
         // detail: https://cli.vuejs.org/config/#devserver-proxy
@@ -55,7 +60,7 @@ export default ({ mode }) => {
         },
         '/plugin': {
           // 需要代理的路径   例如 '/api'
-          target: "http://127.0.0.1:8014",
+          target: `${env.VITE_BASE_PATH}:${env.VITE_SERVER_PORT}/`,
           changeOrigin: true,
           rewrite: (path) =>
             path.replace(new RegExp('^/plugin'), '')
@@ -66,7 +71,7 @@ export default ({ mode }) => {
       manifest: false, // 是否产出manifest.json
       sourcemap: false, // 是否产出sourcemap.json
       outDir: outDir, // 产出目录
-      target: "http://127.0.0.1:8014",
+      target: `${env.VITE_BASE_PATH}:${env.VITE_SERVER_PORT}/`,
       rolldownOptions: {
         output: {
           minify: {

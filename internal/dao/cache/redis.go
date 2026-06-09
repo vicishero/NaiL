@@ -23,6 +23,7 @@ const (
 	_countWhisperKey      = "paopao_whisper_key"
 	_rechargeStatusKey    = "paopao_recharge_status:"
 	_rateLimitKeyPrefix   = "paopao_ratelimit:"
+	_walletNonceKey       = "paopao_wallet_nonce:"
 )
 
 type redisCache struct {
@@ -206,4 +207,23 @@ func (r *redisCache) RateLimitAcquire(ctx context.Context, key string, limit int
 	count, _ := resp[1].AsInt64()
 
 	return success == 1, int(count), nil
+}
+
+func (r *redisCache) SetWalletNonce(ctx context.Context, address string, nonce string) error {
+	return r.c.Do(ctx, r.c.B().Set().
+		Key(_walletNonceKey+address).Value(nonce).
+		ExSeconds(300).  // 5分钟过期
+		Build()).Error()
+}
+
+func (r *redisCache) GetWalletNonce(ctx context.Context, address string) (string, error) {
+	res, err := r.c.Do(ctx, r.c.B().Get().Key(_walletNonceKey+address).Build()).AsBytes()
+	if err != nil {
+		return "", err
+	}
+	return unsafe.String(&res[0], len(res)), nil
+}
+
+func (r *redisCache) DelWalletNonce(ctx context.Context, address string) error {
+	return r.c.Do(ctx, r.c.B().Del().Key(_walletNonceKey+address).Build()).Error()
 }

@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"fmt"
 	"image/color"
 	"image/png"
 	"regexp"
@@ -23,6 +24,7 @@ import (
 	"github.com/rocboss/paopao-ce/pkg/app"
 	"github.com/rocboss/paopao-ce/pkg/utils"
 	"github.com/rocboss/paopao-ce/pkg/version"
+	"github.com/rocboss/paopao-ce/pkg/web3"
 	"github.com/rocboss/paopao-ce/pkg/xerror"
 	"github.com/sirupsen/logrus"
 )
@@ -160,6 +162,98 @@ func (s *pubSrv) Login(req *web.LoginReq) (*web.LoginResp, error) {
 func (s *pubSrv) Version() (*web.VersionResp, error) {
 	return &web.VersionResp{
 		BuildInfo: version.ReadBuildInfo(),
+	}, nil
+}
+
+func (s *pubSrv) WalletNonce(req *web.WalletNonceReq) (*web.WalletNonceResp, error) {
+	ctx := context.Background()
+
+	// 生成随机 nonce
+	key := utils.EncodeMD5(uuid.Must(uuid.NewV4()).String())
+	nonce := utils.EncodeMD5(key + req.Address)
+	// 使用简单的消息格式，避免换行符问题
+	message := fmt.Sprintf("PaoPao Login: %s", nonce)
+
+	logrus.Debugf("WalletNonce - address=%s, nonce=%s, message=%s", req.Address, nonce, message)
+
+	// 将 nonce 存入 Redis，5 分钟过期
+	s.Redis.SetWalletNonce(ctx, req.Address, nonce)
+
+	return &web.WalletNonceResp{
+		Nonce:   nonce,
+		Message: message,
+	}, nil
+}
+
+func (s *pubSrv) WalletLogin(req *web.WalletLoginReq) (*web.WalletLoginResp, error) {
+	ctx := context.Background()
+
+	// 从 Redis 获取 nonce 并验证
+	storedNonce, err := s.Redis.GetWalletNonce(ctx, req.Address)
+	if err != nil || storedNonce != req.Nonce {
+		logrus.Debugf("wallet nonce mismatch: address=%s expected=%s got=%s err=%v", req.Address, storedNonce, req.Nonce, err)
+		return nil, web.ErrInvalidNonce
+	}
+
+	// 构造验证消息（必须与 WalletNonce 返回的消息完全一致）
+	message := fmt.Sprintf("PaoPao Login: %s", req.Nonce)
+
+	logrus.Debugf("WalletLogin - address=%s, nonce=%s, message=%s, sigLen=%d", req.Address, req.Nonce, message, len(req.Signature))
+
+	// 验证签名
+	valid, err := web3.VerifySignature(message, req.Signature, req.Address)
+	if err != nil {
+		logrus.Errorf("verify signature failed: %v", err)
+		return nil, web.ErrInvalidSignature
+	}
+	if !valid {
+		logrus.Debugf("invalid signature: address=%s", req.Address)
+		return nil, web.ErrInvalidSignature
+	}
+
+	// 验证通过，删除 nonce
+	s.Redis.DelWalletNonce(ctx, req.Address)
+
+	// 查找用户是否存在
+	user, err := s.Ds.GetUserByAddress(req.Address)
+	isNewUser := false
+
+	if err != nil || user == nil || user.Model == nil || user.ID <= 0 {
+		// 用户不存在，自动创建新用户
+		isNewUser = true
+		// 使用钱包地址的后 10 位作为用户名
+		username := "user_" + req.Address[len(req.Address)-10:]
+		user = &ms.User{
+			Username: username,
+			Nickname: username,
+			Password: "", // 钱包登录无需密码
+			Salt:     "", // 钱包登录无需盐
+			Avatar:   getRandomAvatar(),
+			Status:   ms.UserStatusNormal,
+			Address:  req.Address,
+		}
+		user, err = s.Ds.CreateUser(user)
+		if err != nil {
+			logrus.Errorf("create user from wallet failed: %v", err)
+			return nil, web.ErrUserRegisterFailed
+		}
+	}
+
+	// 检查用户状态
+	if user.Status == ms.UserStatusClosed {
+		return nil, web.ErrUserHasBeenBanned
+	}
+
+	// 生成 token
+	token, err := app.GenerateToken(user)
+	if err != nil {
+		logrus.Errorf("generate token failed: %v", err)
+		return nil, xerror.UnauthorizedTokenGenerate
+	}
+
+	return &web.WalletLoginResp{
+		Token:     token,
+		IsNewUser: isNewUser,
 	}, nil
 }
 

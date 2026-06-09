@@ -15,6 +15,8 @@ import (
 type Pub interface {
 	_default_
 
+	WalletLogin(*web.WalletLoginReq) (*web.WalletLoginResp, error)
+	WalletNonce(*web.WalletNonceReq) (*web.WalletNonceResp, error)
 	SendCaptcha(*web.SendCaptchaReq) error
 	GetCaptcha() (*web.GetCaptchaResp, error)
 	Register(*web.RegisterReq) (*web.RegisterResp, error)
@@ -29,6 +31,34 @@ func RegisterPubServant(e *gin.Engine, s Pub) {
 	router := e.Group("v1")
 
 	// register routes info to router
+	router.Handle("POST", "/auth/walletLogin", func(c *gin.Context) {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+		}
+		req := new(web.WalletLoginReq)
+		if err := s.Bind(c, req); err != nil {
+			s.Render(c, nil, err)
+			return
+		}
+		resp, err := s.WalletLogin(req)
+		s.Render(c, resp, err)
+	})
+	router.Handle("POST", "/auth/walletNonce", func(c *gin.Context) {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+		}
+		req := new(web.WalletNonceReq)
+		if err := s.Bind(c, req); err != nil {
+			s.Render(c, nil, err)
+			return
+		}
+		resp, err := s.WalletNonce(req)
+		s.Render(c, resp, err)
+	})
 	router.Handle("POST", "/captcha", func(c *gin.Context) {
 		select {
 		case <-c.Request.Context().Done():
@@ -94,6 +124,14 @@ func RegisterPubServant(e *gin.Engine, s Pub) {
 
 // UnimplementedPubServant can be embedded to have forward compatible implementations.
 type UnimplementedPubServant struct{}
+
+func (UnimplementedPubServant) WalletLogin(req *web.WalletLoginReq) (*web.WalletLoginResp, error) {
+	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
+}
+
+func (UnimplementedPubServant) WalletNonce(req *web.WalletNonceReq) (*web.WalletNonceResp, error) {
+	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
+}
 
 func (UnimplementedPubServant) SendCaptcha(req *web.SendCaptchaReq) error {
 	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))

@@ -7,17 +7,18 @@ package admin
 import (
 	"context"
 	"crypto/md5"
-	"time"
 	"fmt"
-	"strconv"
 	"path/filepath"
+	"strconv"
 	"strings"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/rocboss/paopao-ce/internal/conf"
 	"github.com/rocboss/paopao-ce/internal/core/admin"
 	"github.com/rocboss/paopao-ce/internal/dao/admin/dbr"
+	"github.com/sirupsen/logrus"
 )
 
 type adminService struct {
@@ -900,28 +901,30 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 		Avatar    string `gorm:"column:avatar"`
 		Status    int    `gorm:"column:status"`
 		CreatedOn int64  `gorm:"column:created_on"`
+		Address   string `gorm:"column:address"`
 	}
 
 	var total int64
 	var rows []pUser
 
-	db := s.dao.DB().WithContext(ctx).Table("p_user").Where("is_del = 0")
+	countDB := s.dao.DB().WithContext(ctx).Table("p_user").Where("is_del = 0")
 	if req.Nickname != "" {
-		db = db.Where("nickname LIKE ?", "%"+req.Nickname+"%")
+		countDB = countDB.Where("nickname LIKE ?", "%"+req.Nickname+"%")
 	}
 	if req.Username != "" {
-		db = db.Where("username LIKE ?", "%"+req.Username+"%")
+		countDB = countDB.Where("username LIKE ?", "%"+req.Username+"%")
 	}
 	if req.WalletAddress != "" {
-		db = db.Where("phone LIKE ?", "%"+req.WalletAddress+"%")
+		countDB = countDB.Where("address LIKE ?", "%"+req.WalletAddress+"%")
 	}
 	if req.Status != nil {
-		db = db.Where("status = ?", *req.Status)
+		countDB = countDB.Where("status = ?", *req.Status)
 	}
-
-	if err := db.Count(&total).Error; err != nil {
+	if err := countDB.Count(&total).Error; err != nil {
+		logrus.WithError(err).Error("GetH5UserList count failed")
 		return 0, nil, err
 	}
+	logrus.Debugf("GetH5UserList total=%d", total)
 
 	if req.Page <= 0 {
 		req.Page = 1
@@ -930,9 +933,25 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 		req.PageSize = 10
 	}
 	offset := (req.Page - 1) * req.PageSize
-	if err := db.Order("id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+
+	findDB := s.dao.DB().WithContext(ctx).Table("p_user").Where("is_del = 0")
+	if req.Nickname != "" {
+		findDB = findDB.Where("nickname LIKE ?", "%"+req.Nickname+"%")
+	}
+	if req.Username != "" {
+		findDB = findDB.Where("username LIKE ?", "%"+req.Username+"%")
+	}
+	if req.WalletAddress != "" {
+		findDB = findDB.Where("address LIKE ?", "%"+req.WalletAddress+"%")
+	}
+	if req.Status != nil {
+		findDB = findDB.Where("status = ?", *req.Status)
+	}
+	if err := findDB.Order("id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+		logrus.WithError(err).Error("GetH5UserList find failed")
 		return 0, nil, err
 	}
+	logrus.Debugf("GetH5UserList rows=%d", len(rows))
 
 	items := make([]admin.H5UserItem, len(rows))
 	for i, r := range rows {
@@ -941,7 +960,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 			Nickname:      r.Nickname,
 			Username:      r.Username,
 			Phone:         r.Phone,
-			WalletAddress: "",
+			WalletAddress: r.Address,
 			Bio:           "",
 			Avatar:        r.Avatar,
 			Status:        r.Status,
@@ -962,6 +981,7 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Avatar    string `gorm:"column:avatar"`
 		Status    int    `gorm:"column:status"`
 		CreatedOn int64  `gorm:"column:created_on"`
+		Address   string `gorm:"column:address"`
 	}
 	var row pUser
 	err := s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ? AND is_del = 0", userID).First(&row).Error
@@ -973,7 +993,7 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Nickname:      row.Nickname,
 		Username:      row.Username,
 		Phone:         row.Phone,
-		WalletAddress: "",
+		WalletAddress: row.Address,
 		Bio:           "",
 		Avatar:        row.Avatar,
 		Status:        row.Status,
@@ -994,6 +1014,399 @@ func (s *adminService) UpdateH5User(ctx context.Context, req *admin.H5UserUpdate
 // DeleteH5User 删除运维用户(软删除)
 func (s *adminService) DeleteH5User(ctx context.Context, userID int64) error {
 	return s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ?", userID).Updates(map[string]interface{}{
+		"is_del":     1,
+		"deleted_on": time.Now().Unix(),
+	}).Error
+}
+
+// ====== H5运维贴文管理 ======
+
+// GetH5PostList 获取贴文列表
+func (s *adminService) GetH5PostList(ctx context.Context, req *admin.H5PostListReq) (int64, []admin.H5PostItem, error) {
+	type pPost struct {
+		ID             int64  `gorm:"column:id"`
+		UserID         int64  `gorm:"column:user_id"`
+		CommentCount   int64  `gorm:"column:comment_count"`
+		CollectionCount int64 `gorm:"column:collection_count"`
+		UpvoteCount    int64  `gorm:"column:upvote_count"`
+		ShareCount     int64  `gorm:"column:share_count"`
+		Visibility     int    `gorm:"column:visibility"`
+		IsTop          int8   `gorm:"column:is_top"`
+		IsEssence      int8   `gorm:"column:is_essence"`
+		IsLock         int8   `gorm:"column:is_lock"`
+		CreatedOn      int64  `gorm:"column:created_on"`
+	}
+
+	type pUser struct {
+		ID       int64  `gorm:"column:id"`
+		Nickname string `gorm:"column:nickname"`
+		Username string `gorm:"column:username"`
+		Avatar   string `gorm:"column:avatar"`
+	}
+
+	var total int64
+	var rows []pPost
+
+	// Build independent count query
+	countDB := s.dao.DB().WithContext(ctx).Table("p_post").Where("is_del = 0")
+	if req.UserID > 0 {
+		countDB = countDB.Where("user_id = ?", req.UserID)
+	}
+	if req.Visibility != nil {
+		countDB = countDB.Where("visibility = ?", *req.Visibility)
+	}
+	if err := countDB.Count(&total).Error; err != nil {
+		logrus.WithError(err).Error("GetH5PostList count failed")
+		return 0, nil, err
+	}
+	logrus.Debugf("GetH5PostList total=%d", total)
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	offset := (req.Page - 1) * req.PageSize
+
+	// Build independent find query (no shared state with count)
+	findDB := s.dao.DB().WithContext(ctx).Table("p_post").Where("is_del = 0")
+	if req.UserID > 0 {
+		findDB = findDB.Where("user_id = ?", req.UserID)
+	}
+	if req.Visibility != nil {
+		findDB = findDB.Where("visibility = ?", *req.Visibility)
+	}
+	if err := findDB.Order("id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+		logrus.WithError(err).Error("GetH5PostList find failed")
+		return 0, nil, err
+	}
+	logrus.Debugf("GetH5PostList rows=%d", len(rows))
+
+	// 获取所有用户ID
+	userIds := make([]int64, len(rows))
+	for i, r := range rows {
+		userIds[i] = r.UserID
+	}
+
+	// 批量查询用户信息
+	userMap := make(map[int64]pUser)
+	if len(userIds) > 0 {
+		var users []pUser
+		s.dao.DB().WithContext(ctx).Table("p_user").Where("id IN ?", userIds).Find(&users)
+		for _, u := range users {
+			userMap[u.ID] = u
+		}
+	}
+
+	// 获取所有贴文ID
+	postIds := make([]int64, len(rows))
+	for i, r := range rows {
+		postIds[i] = r.ID
+	}
+
+	// 批量查询贴文内容
+	contentMap := make(map[int64][]admin.H5PostContent)
+	if len(postIds) > 0 {
+		type pContent struct {
+			PostID  int64  `gorm:"column:post_id"`
+			Type    int    `gorm:"column:type"`
+			Content string `gorm:"column:content"`
+			Sort    int    `gorm:"column:sort"`
+		}
+		var contents []pContent
+		s.dao.DB().WithContext(ctx).Table("p_post_content").Where("post_id IN ?", postIds).Order("sort ASC").Find(&contents)
+		for _, c := range contents {
+			contentMap[c.PostID] = append(contentMap[c.PostID], admin.H5PostContent{
+				Type:    c.Type,
+				Content: c.Content,
+				Sort:    c.Sort,
+			})
+		}
+	}
+
+	items := make([]admin.H5PostItem, len(rows))
+	for i, r := range rows {
+		user := userMap[r.UserID]
+		items[i] = admin.H5PostItem{
+			ID:              r.ID,
+			UserID:          r.UserID,
+			User: &admin.H5UserItem{
+				ID:       user.ID,
+				Nickname: user.Nickname,
+				Username: user.Username,
+				Avatar:   user.Avatar,
+			},
+			Contents:         contentMap[r.ID],
+			CommentCount:     r.CommentCount,
+			CollectionCount:  r.CollectionCount,
+			UpvoteCount:      r.UpvoteCount,
+			ShareCount:       r.ShareCount,
+			Visibility:       r.Visibility,
+			IsTop:            r.IsTop,
+			IsEssence:        r.IsEssence,
+			IsLock:           r.IsLock,
+			CreatedAt:        time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	return total, items, nil
+}
+
+// GetH5Post 获取单个贴文
+func (s *adminService) GetH5Post(ctx context.Context, postID int64) (*admin.H5PostItem, error) {
+	type pPost struct {
+		ID             int64  `gorm:"column:id"`
+		UserID         int64  `gorm:"column:user_id"`
+		CommentCount   int64  `gorm:"column:comment_count"`
+		CollectionCount int64 `gorm:"column:collection_count"`
+		UpvoteCount    int64  `gorm:"column:upvote_count"`
+		ShareCount     int64  `gorm:"column:share_count"`
+		Visibility     int    `gorm:"column:visibility"`
+		IsTop          int8   `gorm:"column:is_top"`
+		IsEssence      int8   `gorm:"column:is_essence"`
+		IsLock         int8   `gorm:"column:is_lock"`
+		CreatedOn      int64  `gorm:"column:created_on"`
+	}
+
+	var row pPost
+	err := s.dao.DB().WithContext(ctx).Table("p_post").Where("id = ? AND is_del = 0", postID).First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+
+	// 获取用户信息
+	type pUser struct {
+		ID       int64  `gorm:"column:id"`
+		Nickname string `gorm:"column:nickname"`
+		Username string `gorm:"column:username"`
+		Avatar   string `gorm:"column:avatar"`
+	}
+	var user pUser
+	s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ?", row.UserID).First(&user)
+
+	// 获取贴文内容
+	type pContent struct {
+		Type    int    `gorm:"column:type"`
+		Content string `gorm:"column:content"`
+		Sort    int    `gorm:"column:sort"`
+	}
+	var contents []pContent
+	s.dao.DB().WithContext(ctx).Table("p_post_content").Where("post_id = ?", postID).Order("sort ASC").Find(&contents)
+
+	contentItems := make([]admin.H5PostContent, len(contents))
+	for i, c := range contents {
+		contentItems[i] = admin.H5PostContent{
+			Type:    c.Type,
+			Content: c.Content,
+			Sort:    c.Sort,
+		}
+	}
+
+	return &admin.H5PostItem{
+		ID:     row.ID,
+		UserID: row.UserID,
+		User: &admin.H5UserItem{
+			ID:       user.ID,
+			Nickname: user.Nickname,
+			Username: user.Username,
+			Avatar:   user.Avatar,
+		},
+		Contents:         contentItems,
+		CommentCount:     row.CommentCount,
+		CollectionCount:  row.CollectionCount,
+		UpvoteCount:      row.UpvoteCount,
+		ShareCount:       row.ShareCount,
+		Visibility:       row.Visibility,
+		IsTop:            row.IsTop,
+		IsEssence:        row.IsEssence,
+		IsLock:           row.IsLock,
+		CreatedAt:        time.Unix(row.CreatedOn, 0).Format("2006-01-02 15:04:05"),
+	}, nil
+}
+
+// UpdateH5Post 更新贴文状态
+func (s *adminService) UpdateH5Post(ctx context.Context, req *admin.H5PostUpdateReq) error {
+	updates := map[string]interface{}{
+		"visibility": req.Visibility,
+		"is_top":     req.IsTop,
+		"is_essence": req.IsEssence,
+		"is_lock":    req.IsLock,
+	}
+	return s.dao.DB().WithContext(ctx).Table("p_post").Where("id = ? AND is_del = 0", req.ID).Updates(updates).Error
+}
+
+// DeleteH5Post 删除贴文(软删除)
+func (s *adminService) DeleteH5Post(ctx context.Context, postID int64) error {
+	return s.dao.DB().WithContext(ctx).Table("p_post").Where("id = ?", postID).Updates(map[string]interface{}{
+		"is_del":     1,
+		"deleted_on": time.Now().Unix(),
+	}).Error
+}
+
+// ====== H5运维话题管理 ======
+
+// GetH5TagList 获取话题列表
+func (s *adminService) GetH5TagList(ctx context.Context, req *admin.H5TagListReq) (int64, []admin.H5TagItem, error) {
+	type pTag struct {
+		ID        int64  `gorm:"column:id"`
+		Tag       string `gorm:"column:tag"`
+		QuoteNum  int64  `gorm:"column:quote_num"`
+		UserID    int64  `gorm:"column:user_id"`
+		CreatedOn int64  `gorm:"column:created_on"`
+	}
+
+	var total int64
+	var rows []pTag
+
+	countDB := s.dao.DB().WithContext(ctx).Table("p_tag").Where("is_del = 0")
+	if err := countDB.Count(&total).Error; err != nil {
+		logrus.WithError(err).Error("GetH5TagList count failed")
+		return 0, nil, err
+	}
+	logrus.Debugf("GetH5TagList total=%d", total)
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	offset := (req.Page - 1) * req.PageSize
+
+	findDB := s.dao.DB().WithContext(ctx).Table("p_tag").Where("is_del = 0")
+	if err := findDB.Order("id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+		logrus.WithError(err).Error("GetH5TagList find failed")
+		return 0, nil, err
+	}
+	logrus.Debugf("GetH5TagList rows=%d", len(rows))
+
+	items := make([]admin.H5TagItem, len(rows))
+	for i, r := range rows {
+		items[i] = admin.H5TagItem{
+			ID:        r.ID,
+			Tag:       r.Tag,
+			QuoteNum:  r.QuoteNum,
+			UserID:    r.UserID,
+			CreatedAt: time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	return total, items, nil
+}
+
+// UpdateH5Tag 更新话题
+func (s *adminService) UpdateH5Tag(ctx context.Context, req *admin.H5TagUpdateReq) error {
+	updates := map[string]interface{}{}
+	if req.Tag != "" {
+		updates["tag"] = req.Tag
+	}
+	updates["quote_num"] = req.QuoteNum
+	return s.dao.DB().WithContext(ctx).Table("p_tag").Where("id = ? AND is_del = 0", req.ID).Updates(updates).Error
+}
+
+// DeleteH5Tag 删除话题(软删除)
+func (s *adminService) DeleteH5Tag(ctx context.Context, tagID int64) error {
+	return s.dao.DB().WithContext(ctx).Table("p_tag").Where("id = ?", tagID).Updates(map[string]interface{}{
+		"is_del":     1,
+		"deleted_on": time.Now().Unix(),
+	}).Error
+}
+
+// ====== H5运维评论管理 ======
+
+// GetH5CommentList 获取评论列表
+func (s *adminService) GetH5CommentList(ctx context.Context, req *admin.H5CommentListReq) (int64, []admin.H5CommentItem, error) {
+	type pComment struct {
+		ID        int64  `gorm:"column:id"`
+		PostID    int64  `gorm:"column:post_id"`
+		UserID    int64  `gorm:"column:user_id"`
+		CreatedOn int64  `gorm:"column:created_on"`
+	}
+
+	var total int64
+	var rows []pComment
+
+	baseDB := s.dao.DB().WithContext(ctx).Table("p_comment").Where("is_del = 0")
+	if req.PostID > 0 {
+		baseDB = baseDB.Where("post_id = ?", req.PostID)
+	}
+	if err := baseDB.Count(&total).Error; err != nil {
+		return 0, nil, err
+	}
+
+	if req.Page <= 0 {
+		req.Page = 1
+	}
+	if req.PageSize <= 0 {
+		req.PageSize = 10
+	}
+	offset := (req.Page - 1) * req.PageSize
+
+	findDB := s.dao.DB().WithContext(ctx).Table("p_comment").Where("is_del = 0")
+	if req.PostID > 0 {
+		findDB = findDB.Where("post_id = ?", req.PostID)
+	}
+	if err := findDB.Order("id ASC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+		return 0, nil, err
+	}
+
+	// 收集用户ID
+	userIds := make([]int64, len(rows))
+	commentIds := make([]int64, len(rows))
+	for i, r := range rows {
+		userIds[i] = r.UserID
+		commentIds[i] = r.ID
+	}
+
+	// 批量查询用户昵称
+	type pUser struct {
+		ID       int64  `gorm:"column:id"`
+		Nickname string `gorm:"column:nickname"`
+	}
+	userMap := make(map[int64]string)
+	if len(userIds) > 0 {
+		var users []pUser
+		s.dao.DB().WithContext(ctx).Table("p_user").Where("id IN ?", userIds).Find(&users)
+		for _, u := range users {
+			userMap[u.ID] = u.Nickname
+		}
+	}
+
+	// 批量查询评论内容（取第一条文本内容）
+	type pContent struct {
+		CommentID int64  `gorm:"column:comment_id"`
+		Content   string `gorm:"column:content"`
+	}
+	contentMap := make(map[int64]string)
+	if len(commentIds) > 0 {
+		var contents []pContent
+		s.dao.DB().WithContext(ctx).Table("p_comment_content").Where("comment_id IN ?", commentIds).Order("sort ASC").Find(&contents)
+		for _, c := range contents {
+			if _, ok := contentMap[c.CommentID]; !ok {
+				contentMap[c.CommentID] = c.Content
+			}
+		}
+	}
+
+	items := make([]admin.H5CommentItem, len(rows))
+	for i, r := range rows {
+		items[i] = admin.H5CommentItem{
+			ID:        r.ID,
+			PostID:    r.PostID,
+			UserID:    r.UserID,
+			Nickname:  userMap[r.UserID],
+			Content:   contentMap[r.ID],
+			CreatedAt: time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
+		}
+	}
+
+	return total, items, nil
+}
+
+// DeleteH5Comment 删除评论(软删除)
+func (s *adminService) DeleteH5Comment(ctx context.Context, commentID int64) error {
+	return s.dao.DB().WithContext(ctx).Table("p_comment").Where("id = ?", commentID).Updates(map[string]interface{}{
 		"is_del":     1,
 		"deleted_on": time.Now().Unix(),
 	}).Error

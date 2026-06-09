@@ -34,7 +34,37 @@
         </el-table-column>
         <el-table-column align="left" label="昵称" min-width="120" prop="nickname" />
         <el-table-column align="left" label="用户名" min-width="120" prop="username" />
-        <el-table-column align="left" label="钱包地址" min-width="200" prop="walletAddress" />
+        <el-table-column align="left" label="钱包地址" min-width="280" prop="walletAddress">
+          <template #default="scope">
+            <div v-if="scope.row.walletAddress" class="wallet-address-cell">
+              <el-tooltip :content="scope.row.walletAddress" placement="top">
+                <a :href="`https://bscscan.com/address/${scope.row.walletAddress}`" target="_blank" class="address-link">
+                  {{ formatAddressShort(scope.row.walletAddress) }}
+                </a>
+              </el-tooltip>
+              <div class="address-actions">
+                <el-tooltip content="复制地址" placement="top">
+                  <el-icon class="action-icon" @click="copyAddress(scope.row.walletAddress)">
+                    <CopyDocument />
+                  </el-icon>
+                </el-tooltip>
+                <el-tooltip content="显示二维码" placement="top">
+                  <span class="action-icon qr-icon" @click="showQrCode(scope.row.walletAddress)">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <rect x="3" y="3" width="7" height="7" />
+                      <rect x="14" y="3" width="7" height="7" />
+                      <rect x="3" y="14" width="7" height="7" />
+                      <rect x="14" y="14" width="3" height="3" />
+                      <rect x="18" y="14" width="3" height="3" />
+                      <rect x="14" y="18" width="3" height="3" />
+                    </svg>
+                  </span>
+                </el-tooltip>
+              </div>
+            </div>
+            <span v-else class="no-address">-</span>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="简介" min-width="150" prop="bio" show-overflow-tooltip />
         <el-table-column align="left" label="关注数" min-width="80" prop="followingCount" />
         <el-table-column align="left" label="粉丝数" min-width="80" prop="followerCount" />
@@ -62,6 +92,20 @@
         />
       </div>
     </div>
+
+    <!-- 钱包地址二维码弹窗 -->
+    <el-dialog v-model="qrCodeVisible" title="BSC 钱包地址" width="400px" center>
+      <div class="qr-code-container">
+        <qrcode-vue :value="currentWalletAddress" :size="250" level="H" />
+        <p class="address-text">{{ currentWalletAddress }}</p>
+        <a :href="`https://bscscan.com/address/${currentWalletAddress}`" target="_blank" class="bsc-link">
+          在 BSCScan 查看
+        </a>
+      </div>
+      <template #footer>
+        <el-button type="primary" @click="copyAddress(currentWalletAddress)">复制地址</el-button>
+      </template>
+    </el-dialog>
 
     <el-drawer v-model="drawerVisible" :before-close="closeDrawer" :show-close="false">
       <template #header>
@@ -96,6 +140,8 @@ import { getH5UserList, getH5User, updateH5User, deleteH5User } from '@/api/h5Ad
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/format'
+import { CopyDocument } from '@element-plus/icons-vue'
+import QrcodeVue from 'qrcode.vue'
 
 defineOptions({ name: 'h5Users' })
 
@@ -103,6 +149,8 @@ const page = ref(1), total = ref(0), pageSize = ref(10), tableData = ref([])
 const searchInfo = reactive({ nickname: '', username: '', walletAddress: '', status: undefined })
 const drawerVisible = ref(false)
 const form = ref({ ID: 0, nickname: '', bio: '', status: 1 })
+const qrCodeVisible = ref(false)
+const currentWalletAddress = ref('')
 
 const getTableData = async () => {
   const params = { page: page.value, pageSize: pageSize.value, ...searchInfo }
@@ -141,4 +189,108 @@ const deleteUserFunc = async (row) => {
     if (res.code === 0) { ElMessage.success('删除成功'); if (tableData.value.length === 1 && page.value > 1) page.value--; getTableData() }
   })
 }
+
+// 复制钱包地址到剪贴板
+const copyAddress = async (address) => {
+  try {
+    await navigator.clipboard.writeText(address)
+    ElMessage.success('地址已复制到剪贴板')
+  } catch (err) {
+    // 降级方案
+    const textArea = document.createElement('textarea')
+    textArea.value = address
+    document.body.appendChild(textArea)
+    textArea.select()
+    document.execCommand('copy')
+    document.body.removeChild(textArea)
+    ElMessage.success('地址已复制到剪贴板')
+  }
+}
+
+// 显示二维码
+const showQrCode = (address) => {
+  currentWalletAddress.value = address
+  qrCodeVisible.value = true
+}
+
+// 钱包地址缩写格式：0x1234...123a
+const formatAddressShort = (address) => {
+  if (!address || address.length < 10) return address
+  return address.substring(0, 6) + '...' + address.substring(address.length - 4)
+}
 </script>
+
+<style scoped>
+.wallet-address-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.address-link {
+  color: #409eff;
+  text-decoration: none;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.address-link:hover {
+  text-decoration: underline;
+}
+
+.address-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.action-icon {
+  cursor: pointer;
+  color: #909399;
+  font-size: 16px;
+  transition: color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.action-icon:hover {
+  color: #409eff;
+}
+
+.qr-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.no-address {
+  color: #c0c4cc;
+}
+
+.qr-code-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 0;
+}
+
+.address-text {
+  margin: 0;
+  font-family: monospace;
+  font-size: 14px;
+  color: #606266;
+  word-break: break-all;
+  text-align: center;
+  max-width: 250px;
+}
+
+.bsc-link {
+  color: #409eff;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+.bsc-link:hover {
+  text-decoration: underline;
+}
+</style>

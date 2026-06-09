@@ -32,14 +32,9 @@ type Admin interface {
 	// Chain provide handlers chain for gin
 	Chain() gin.HandlersChain
 
-	SiteInfo(*web.SiteInfoReq) (*web.SiteInfoResp, error)
-	GetSiteSettings() (*web.SiteSettingsResp, error)
-	UpdateSiteSettings(*web.SiteSettingsReq) (*web.SiteSettingsResp, error)
-	GetSettingsSchema() (*web.AdminSettingsSchemaResp, error)
-	GetSettingsValues() (*web.AdminSettingsValuesResp, error)
-	SaveSettings(*web.AdminSettingsSaveReq) (*web.AdminSettingsSaveResp, error)
-	ChangeUserStatus(*web.ChangeUserStatusReq) error
 	SyncSearchIndex(*web.SyncSearchIndexReq) error
+	SiteInfo(*web.SiteInfoReq) (*web.SiteInfoResp, error)
+	ChangeUserStatus(*web.ChangeUserStatusReq) error
 
 	mustEmbedUnimplementedAdminServant()
 }
@@ -52,6 +47,19 @@ func RegisterAdminServant(e *gin.Engine, s Admin) {
 	router.Use(middlewares...)
 
 	// register routes info to router
+	router.Handle("GET", "admin/sync/index", func(c *gin.Context) {
+		select {
+		case <-c.Request.Context().Done():
+			return
+		default:
+		}
+		req := new(web.SyncSearchIndexReq)
+		if err := s.Bind(c, req); err != nil {
+			s.Render(c, nil, err)
+			return
+		}
+		s.Render(c, nil, s.SyncSearchIndex(req))
+	})
 	router.Handle("GET", "admin/site/status", func(c *gin.Context) {
 		select {
 		case <-c.Request.Context().Done():
@@ -64,64 +72,6 @@ func RegisterAdminServant(e *gin.Engine, s Admin) {
 			return
 		}
 		resp, err := s.SiteInfo(req)
-		s.Render(c, resp, err)
-	})
-	router.Handle("GET", "admin/site/profile", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-
-		resp, err := s.GetSiteSettings()
-		s.Render(c, resp, err)
-	})
-	router.Handle("POST", "admin/site/profile", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-		req := new(web.SiteSettingsReq)
-		if err := s.Bind(c, req); err != nil {
-			s.Render(c, nil, err)
-			return
-		}
-		resp, err := s.UpdateSiteSettings(req)
-		s.Render(c, resp, err)
-	})
-	router.Handle("GET", "admin/settings/schema", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-
-		resp, err := s.GetSettingsSchema()
-		s.Render(c, resp, err)
-	})
-	router.Handle("GET", "admin/settings/values", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-
-		resp, err := s.GetSettingsValues()
-		s.Render(c, resp, err)
-	})
-	router.Handle("POST", "admin/settings/save", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-		req := new(web.AdminSettingsSaveReq)
-		if err := s.Bind(c, req); err != nil {
-			s.Render(c, nil, err)
-			return
-		}
-		resp, err := s.SaveSettings(req)
 		s.Render(c, resp, err)
 	})
 	router.Handle("POST", "admin/user/status", func(c *gin.Context) {
@@ -137,19 +87,6 @@ func RegisterAdminServant(e *gin.Engine, s Admin) {
 		}
 		s.Render(c, nil, s.ChangeUserStatus(req))
 	})
-	router.Handle("GET", "admin/sync/index", func(c *gin.Context) {
-		select {
-		case <-c.Request.Context().Done():
-			return
-		default:
-		}
-		req := new(web.SyncSearchIndexReq)
-		if err := s.Bind(c, req); err != nil {
-			s.Render(c, nil, err)
-			return
-		}
-		s.Render(c, nil, s.SyncSearchIndex(req))
-	})
 }
 
 // UnimplementedAdminServant can be embedded to have forward compatible implementations.
@@ -159,35 +96,15 @@ func (UnimplementedAdminServant) Chain() gin.HandlersChain {
 	return nil
 }
 
+func (UnimplementedAdminServant) SyncSearchIndex(req *web.SyncSearchIndexReq) error {
+	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
+}
+
 func (UnimplementedAdminServant) SiteInfo(req *web.SiteInfoReq) (*web.SiteInfoResp, error) {
 	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 
-func (UnimplementedAdminServant) GetSiteSettings() (*web.SiteSettingsResp, error) {
-	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func (UnimplementedAdminServant) UpdateSiteSettings(req *web.SiteSettingsReq) (*web.SiteSettingsResp, error) {
-	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func (UnimplementedAdminServant) GetSettingsSchema() (*web.AdminSettingsSchemaResp, error) {
-	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func (UnimplementedAdminServant) GetSettingsValues() (*web.AdminSettingsValuesResp, error) {
-	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func (UnimplementedAdminServant) SaveSettings(req *web.AdminSettingsSaveReq) (*web.AdminSettingsSaveResp, error) {
-	return nil, mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
 func (UnimplementedAdminServant) ChangeUserStatus(req *web.ChangeUserStatusReq) error {
-	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
-}
-
-func (UnimplementedAdminServant) SyncSearchIndex(req *web.SyncSearchIndexReq) error {
 	return mir.Errorln(http.StatusNotImplemented, http.StatusText(http.StatusNotImplemented))
 }
 

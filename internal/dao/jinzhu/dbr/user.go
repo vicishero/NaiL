@@ -25,6 +25,7 @@ type User struct {
 	Avatar   string `json:"avatar"`
 	Balance  int64  `json:"balance"`
 	IsAdmin  bool   `json:"is_admin"`
+	Address  string `json:"address" gorm:"size:42;index:idx_address"` // 钱包地址
 }
 
 type UserFormated struct {
@@ -59,6 +60,8 @@ func (u *User) Get(db *gorm.DB) (*User, error) {
 		db = db.Where("id= ? AND is_del = ?", u.Model.ID, 0)
 	} else if u.Phone != "" {
 		db = db.Where("phone = ? AND is_del = ?", u.Phone, 0)
+	} else if u.Address != "" {
+		db = db.Where("address = ? AND is_del = ?", u.Address, 0)
 	} else {
 		db = db.Where("username = ? AND is_del = ?", u.Username, 0)
 	}
