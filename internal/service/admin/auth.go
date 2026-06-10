@@ -1859,9 +1859,14 @@ func (s *adminService) GetSysMsgList(ctx context.Context, req *admin.H5SysMsgLis
 
 // CreateSysMsg 创建系统消息
 func (s *adminService) CreateSysMsg(ctx context.Context, req *admin.H5SysMsgCreateReq) error {
+	// 字符串转int64，避免ID精度丢失，默认0表示全员
+	receiverID, err := strconv.ParseInt(req.ReceiverID, 10, 64)
+	if err != nil {
+		receiverID = 0
+	}
 	return s.dao.DB().WithContext(ctx).Table("p_notice").Create(map[string]interface{}{
 		"sender_user_id":   0,
-		"receiver_user_id": req.ReceiverID,
+		"receiver_user_id": receiverID,
 		"brief":            req.Brief,
 		"content":          req.Content,
 		"is_read":          0,
