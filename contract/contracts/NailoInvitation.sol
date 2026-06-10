@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.34;
 
-contract Invitation {
+contract NailoInvitation {
     uint256 public constant MAX_REFER_LEVEL = 100;
 
     address public immutable ROOT_ADDRESS;
@@ -51,6 +51,19 @@ contract Invitation {
 
     function getTeamCount(address _user) external view returns (uint256) {
         return teamCount[_user];
+    }
+
+    function getInviterChain(address _user) external view returns (address[10] memory) {
+        address[10] memory chain;
+        address current = _user;
+        for (uint256 i = 0; i < 10; i++) {
+            current = inviter[current];
+            if (current == address(0)) {
+                break;
+            }
+            chain[i] = current;
+        }
+        return chain;
     }
 
     function isBound(address _user) external view returns (bool) {

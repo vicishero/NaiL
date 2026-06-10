@@ -1,9 +1,16 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.34;
 
-import "./NailoKOL.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
+interface INailoKOL {
+    function mint(address to) external;
+    function nextTokenId() external view returns (uint256);
+    function balanceOf(address owner) external view returns (uint256);
+    function expireTime(address user) external view returns (uint256);
+    function setExpireTime(address user, uint256 time) external;
+}
 
 interface IPancakeRouter02 {
     function swapExactTokensForTokens(
@@ -37,7 +44,7 @@ contract NailoKolMinter is AccessControl {
         bool active;
     }
 
-    NailoKOL public immutable kolToken;
+    INailoKOL public immutable kolToken;
     IERC20 public immutable usdt;
     IPancakeRouter02 public immutable pancakeRouter;
     address public treasury;
@@ -68,7 +75,7 @@ contract NailoKolMinter is AccessControl {
         require(_pancakeRouter != address(0), "Minter: invalid router address");
         require(_treasury != address(0), "Minter: invalid treasury");
 
-        kolToken = NailoKOL(_kolToken);
+        kolToken = INailoKOL(_kolToken);
         usdt = IERC20(_usdt);
         pancakeRouter = IPancakeRouter02(_pancakeRouter);
         treasury = _treasury;
