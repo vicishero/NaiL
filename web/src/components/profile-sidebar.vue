@@ -2,7 +2,7 @@
     <n-drawer
         v-model:show="showDrawer"
         placement="right"
-        :width="320"
+        :width="drawerWidth"
         :mask-closable="true"
         :native-scrollbar="false"
         title="个人中心"
@@ -169,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter } from 'vue-router';
 import {
     PersonOutline,
@@ -209,6 +209,28 @@ const showDrawer = computed({
     set: (val) => {
         if (!val) emit('close');
     },
+});
+
+// 响应式侧边栏宽度：移动端60%屏幕宽度，桌面端固定320px
+const screenWidth = ref(window.innerWidth);
+const drawerWidth = computed(() => {
+    if (screenWidth.value <= 768) {
+        // 手机端：60%屏幕宽度，最小200px，最大320px
+        return Math.min(Math.max(screenWidth.value * 0.6, 200), 320);
+    }
+    return 320;
+});
+
+function handleResize() {
+    screenWidth.value = window.innerWidth;
+}
+
+onMounted(() => {
+    window.addEventListener('resize', handleResize);
+});
+
+onUnmounted(() => {
+    window.removeEventListener('resize', handleResize);
 });
 
 const darkMode = computed({

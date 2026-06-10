@@ -282,7 +282,7 @@ type H5SysMsgItem struct {
 
 // H5SysMsgCreateReq 创建系统消息
 type H5SysMsgCreateReq struct {
-	ReceiverID int64 `json:"receiverId,string"` // string tag自动处理JS大ID精度问题，0表示全员
+	ReceiverID int64 `json:"receiverId,string"` // 跟用户ID保持一致，0表示全员
 	Brief      string `json:"brief"`
 	Content    string `json:"content"`
 }

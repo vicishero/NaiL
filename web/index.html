@@ -145,12 +145,56 @@
         navigator.serviceWorker.register("/sw.js");
       }
     });
+
+    // ========================================
+    // TokenPocket 钱包切换早期检测（在 Vue 加载前执行）
+    // ========================================
+    (function() {
+      var TOKEN_KEY = 'PAOPAO_TOKEN';
+      var WALLET_ADDRESS_KEY = 'PAOPAO_WALLET_ADDRESS';
+      var hasToken = !!localStorage.getItem(TOKEN_KEY);
+      var savedAddress = localStorage.getItem(WALLET_ADDRESS_KEY);
+
+      if (hasToken && savedAddress) {
+        console.log('[EarlyCheck] 已登录，提前检测钱包地址变化');
+        // 轮询检测钱包是否注入，对比地址
+        var checkCount = 0;
+        var maxChecks = 20; // 最多检测 10 秒
+        var checkInterval = setInterval(function() {
+          checkCount++;
+          var provider = window.ethereum || (window.web3 && window.web3.currentProvider) || window.tp || window.TokenPocket;
+          if (provider && provider.request) {
+            clearInterval(checkInterval);
+            provider.request({ method: 'eth_accounts' })
+              .then(function(accounts) {
+                if (accounts && accounts[0]) {
+                  var currentAddress = accounts[0].toLowerCase();
+                  if (currentAddress !== savedAddress.toLowerCase()) {
+                    console.log('[EarlyCheck] 检测到钱包切换，立即清除登录状态! 旧:', savedAddress, '新:', currentAddress);
+                    localStorage.removeItem(TOKEN_KEY);
+                    localStorage.removeItem(WALLET_ADDRESS_KEY);
+                  } else {
+                    console.log('[EarlyCheck] 钱包地址一致，无需清除登录状态');
+                  }
+                }
+              })
+              .catch(function(err) {
+                console.log('[EarlyCheck] 获取钱包地址失败:', err);
+              });
+          } else if (checkCount >= maxChecks) {
+            clearInterval(checkInterval);
+            console.log('[EarlyCheck] 未检测到钱包，跳过检查');
+          }
+        }, 500);
+      }
+    })();
+
     // 隐藏启动页
     function hideSplashScreen() {
       var splash = document.getElementById('splash-screen');
       if (splash) {
-        // 至少显示 800ms，避免闪屏
-        var minDisplayTime = 800;
+        // 至少显示 500ms，TokenPocket 环境避免等待太久
+        var minDisplayTime = 500;
         var elapsed = performance.now() - window.__PERF_START__;
         var delay = Math.max(0, minDisplayTime - elapsed);
         setTimeout(function() {
@@ -159,7 +203,7 @@
           setTimeout(function() {
             splash.remove();
             perfLog('启动页已隐藏, 页面渲染完成');
-          }, 500);
+          }, 300);
         }, delay);
       }
     }

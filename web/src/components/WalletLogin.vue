@@ -58,7 +58,7 @@ import { ref, onMounted, onUnmounted, watch } from 'vue'
 import { useStoreMain } from '@/store/main'
 import { TOKEN_KEY, useStoreUser } from '@/store/user'
 import { userInfo } from '@/api/auth'
-import { connectWallet, signMessage, getWalletProvider } from '@/utils/web3'
+import { connectWallet, signMessage, getWalletProvider, resetProviderCache, recordWalletAddressOnLogin } from '@/utils/web3'
 import { Api } from '@/utils/request'
 
 const storeMain = useStoreMain()
@@ -110,6 +110,7 @@ function clearLoginState() {
 
 // 重置组件状态
 function resetState() {
+  console.log('[WalletLogin] 重置组件状态，清空缓存')
   address.value = ''
   nonce.value = ''
   signMessageText.value = ''
@@ -117,26 +118,35 @@ function resetState() {
   signing.value = false
   retryCount.value = 0
   clearLoginState()
+  // 重置 provider 缓存，确保切换钱包时获取新账户
+  resetProviderCache()
 }
 
 // 获取钱包地址并请求 nonce
 async function fetchWalletAndNonce(): Promise<boolean> {
   try {
+    console.log('[WalletLogin] 开始连接钱包并获取 nonce...')
     const result = await connectWallet()
+    console.log('[WalletLogin] connectWallet 返回结果:', result)
+
     if (result) {
       address.value = result.address
+      console.log('[WalletLogin] 当前钱包地址:', result.address)
 
       // 获取 nonce
       const nonceResult = await Api.v1.auth.post.walletNonce({
         address: result.address,
       })
+      console.log('[WalletLogin] nonce 接口返回:', nonceResult)
       nonce.value = nonceResult.nonce
       signMessageText.value = nonceResult.message
 
       return true
+    } else {
+      console.log('[WalletLogin] connectWallet 返回 null，连接失败')
     }
   } catch (error: any) {
-    console.error('获取钱包信息失败:', error)
+    console.error('[WalletLogin] 获取钱包信息失败:', error)
     // 如果是用户拒绝请求，不显示错误提示
     if (error?.code !== 4001) {
       window.$message.error(error?.message || '连接钱包失败')
@@ -147,25 +157,20 @@ async function fetchWalletAndNonce(): Promise<boolean> {
 
 // 监听登录弹窗显示，自动连接钱包
 watch(() => storeMain.authModalShow, async (show) => {
+  console.log('[WalletLogin] 登录弹窗状态变化:', show)
   if (show) {
     // 每次打开弹窗时重新检测钱包是否安装
     hasWalletInstalled.value = !!getWalletProvider()
+    console.log('[WalletLogin] 钱包是否安装:', hasWalletInstalled.value)
 
-    // 弹窗打开时，自动尝试连接钱包
+    // 弹窗打开时重置状态
+    resetState()
+
+    // 自动连接钱包，确保获取到当前选中的账户
     if (hasWalletInstalled.value) {
-      // 先尝试恢复之前的登录状态（处理钱包刷新页面问题）
-      const savedState = restoreLoginState()
-      if (savedState?.address && savedState?.nonce) {
-        address.value = savedState.address
-        nonce.value = savedState.nonce
-        signMessageText.value = savedState.signMessageText
-        return
-      }
-
-      // 稍微延迟确保弹窗显示后再连接
       setTimeout(async () => {
         await fetchWalletAndNonce()
-      }, 500)
+      }, 300)
     }
   } else {
     // 弹窗关闭时重置状态
@@ -175,34 +180,63 @@ watch(() => storeMain.authModalShow, async (show) => {
 
 // 检查是否安装了钱包（多次尝试，兼容移动端钱包注入慢）
 function checkWalletInstalled() {
-  const maxRetries = 5
+  const maxRetries = 15  // 增加重试次数，适配移动端钱包
   let retry = 0
 
   const check = () => {
     hasWalletInstalled.value = !!getWalletProvider()
+    console.log(`[WalletLogin] 钱包检测 ${retry + 1}/${maxRetries}:`, hasWalletInstalled.value)
     if (!hasWalletInstalled.value && retry < maxRetries) {
       retry++
-      setTimeout(check, 200)
+      setTimeout(check, 300)  // 稍微延长间隔
     }
   }
   check()
 }
 
 onMounted(() => {
+  console.log('[WalletLogin] 组件挂载，开始注册事件监听')
   // 多次检测，确保钱包已注入（兼容移动端钱包）
   checkWalletInstalled()
 
-  // 监听钱包账户和网络变化
-  const provider = getWalletProvider()
-  if (provider && provider.on) {
-    provider.on('accountsChanged', handleAccountsChanged)
-    provider.on('chainChanged', handleChainChanged)
+  // 监听钱包账户和网络变化（重试机制，确保注册成功）
+  function setupWalletListeners() {
+    const provider = getWalletProvider()
+    if (provider && provider.on) {
+      console.log('[WalletLogin] 注册钱包事件监听: accountsChanged, chainChanged')
+      // 先移除旧的监听器，避免重复注册
+      try {
+        provider.removeListener('accountsChanged', handleAccountsChanged)
+        provider.removeListener('chainChanged', handleChainChanged)
+      } catch (e) {
+        console.log('[WalletLogin] 移除旧监听器失败:', e)
+      }
+      // 注册新的监听器
+      provider.on('accountsChanged', handleAccountsChanged)
+      provider.on('chainChanged', handleChainChanged)
+      return true
+    }
+    return false
   }
+
+  // 多次尝试注册监听器（解决钱包注入延迟问题）
+  let retry = 0
+  const trySetup = () => {
+    if (setupWalletListeners()) return
+    if (retry < 5) {
+      retry++
+      setTimeout(trySetup, 500)
+    }
+  }
+  trySetup()
 
   // 页面隐藏/可见时重新检测（处理移动端切换 App 后返回的情况）
   document.addEventListener('visibilitychange', () => {
+    console.log('[WalletLogin] 页面可见性变化:', !document.hidden)
     if (!document.hidden) {
       checkWalletInstalled()
+      // 重新注册监听器
+      setupWalletListeners()
       // 如果弹窗打开着，尝试重新连接
       if (storeMain.authModalShow && !address.value) {
         setTimeout(async () => {
@@ -244,18 +278,22 @@ function handleChainChanged(chainId: string) {
 
 // 监听钱包账户变化（组件内）
 function handleAccountsChanged(accounts: string[]) {
+  console.log('[WalletLogin] 钱包账户变化:', accounts)
+  console.log('[WalletLogin] 当前登录用户:', storeUser.userInfo.id)
+
+  // 如果用户已登录且钱包账户发生变化，自动退出登录
+  if (storeUser.userLogined) {
+    console.log('[WalletLogin] 检测到钱包账户变化，自动退出登录')
+    storeUser.userLogout()
+    window.$message.info('检测到钱包账户变化，已自动退出登录')
+    return
+  }
+
   // 重新检测钱包状态
   hasWalletInstalled.value = !!getWalletProvider() && accounts.length > 0
 
   if (storeMain.authModalShow) {
-    // 有些钱包切换账户会刷新页面，这里先保存状态
-    if (address.value && nonce.value) {
-      saveLoginState({
-        address: address.value,
-        nonce: nonce.value,
-        signMessageText: signMessageText.value,
-      })
-    }
+    console.log('[WalletLogin] 弹窗打开，重置状态')
     resetState()
     if (accounts.length > 0) {
       // 延迟一下确保钱包连接稳定后再获取 nonce
@@ -293,20 +331,27 @@ async function handleConnect() {
 async function handleSign() {
   signing.value = true
   try {
+    console.log('[WalletLogin] 开始签名流程，当前 address:', address.value)
     // 重新连接确保获取正确的签名者对象
     const result = await connectWallet()
+    console.log('[WalletLogin] 重新连接钱包结果:', result)
+
     if (!result || !address.value) {
       window.$message.error('钱包未连接')
       return
     }
 
+    console.log('[WalletLogin] 对比地址 - 组件内:', address.value, '重新连接获取:', result.address)
     const signature = await signMessage(result.signer, signMessageText.value)
+    console.log('[WalletLogin] 签名结果:', signature)
+
     if (!signature) {
       window.$message.error('签名失败')
       return
     }
 
     // 提交登录（使用已获取的地址）
+    console.log('[WalletLogin] 提交登录，使用地址:', address.value)
     const loginResult = await Api.v1.auth.post.walletLogin({
       address: address.value,
       signature,
@@ -321,6 +366,9 @@ async function handleSign() {
       .then((res) => {
         storeUser.updateUserinfo(res)
         storeMain.triggerAuth(false)
+
+        // 记录登录的钱包地址，用于后续检测切换
+        recordWalletAddressOnLogin(address.value)
 
         if (loginResult.is_new_user) {
           window.$message.success('欢迎加入 PaoPao！')

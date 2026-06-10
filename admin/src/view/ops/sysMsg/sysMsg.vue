@@ -78,9 +78,9 @@ const handleCurrentChange = (v) => { page.value = v; getTableData() }
 
 const addMsg = () => { form.receiverId = '0'; form.brief = ''; form.content = ''; dialogVisible.value = true }
 const sendMsg = async () => {
-  // 转数字发送，后端用 json:",string" tag 自动处理
+  // 发送字符串格式，跟用户ID格式保持一致，"0"表示全员
   const receiverIdVal = form.receiverId?.trim() || '0'
-  const res = await createSysMsg({ receiverId: Number(receiverIdVal) || 0, brief: form.brief, content: form.content })
+  const res = await createSysMsg({ receiverId: receiverIdVal, brief: form.brief, content: form.content })
   if (res.code === 0) { ElMessage.success('发送成功'); dialogVisible.value = false; getTableData() }
 }
 const deleteFunc = async (row) => {
