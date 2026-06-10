@@ -192,6 +192,7 @@ const actionOpts = computed(() => {
 const emit = defineEmits<{
   (e: 'send-whisper', user: Item.UserInfo): void;
   (e: 'reload'): void;
+  (e: 'read-message', messageType: number): void;
 }>();
 
 const onHandleFollowAction = (message: Item.MessageProps) => {
@@ -315,6 +316,8 @@ const handleReadMessage = (message: Item.MessageProps) => {
     })
       .then((_res) => {
         message.is_read = 1;
+        // 通知父组件更新未读计数，传递消息类型（用于区分私信/系统消息）
+        emit('read-message', message.type);
       })
       .catch((err) => {
         console.error('已读请求失败:', err);

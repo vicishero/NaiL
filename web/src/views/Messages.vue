@@ -57,7 +57,7 @@
                 </div>
                 <div v-else class="msg-list">
                     <div v-for="m in list" :key="m.id" class="msg-card">
-                        <message-item :message="m" @send-whisper="onSendWhisper" @reload="reloadMessages" />
+                        <message-item :message="m" @send-whisper="onSendWhisper" @reload="reloadMessages" @read-message="onReadMessage" />
                     </div>
                 </div>
             </div>
@@ -80,7 +80,7 @@
                 </div>
                 <div v-else class="msg-list">
                     <div v-for="m in sysList" :key="m.id" class="msg-card">
-                        <message-item :message="m" @send-whisper="onSendWhisper" @reload="reloadSysMessages" />
+                        <message-item :message="m" @send-whisper="onSendWhisper" @reload="reloadSysMessages" @read-message="onReadMessage" />
                     </div>
                 </div>
             </div>
@@ -225,6 +225,22 @@ function sysReset() {
 function reloadSysMessages() {
     sysReset();
     loadSysMessages();
+}
+
+// 处理消息已读 - 立即更新对应Tab的未读计数
+function onReadMessage(messageType: number) {
+    // type = 99 是系统消息，其他（1-5）是私信相关
+    if (messageType === 99) {
+        // 系统消息未读减1
+        if (sysUnread.value > 0) {
+            sysUnread.value--;
+        }
+    } else {
+        // 私信未读减1
+        if (dmUnread.value > 0) {
+            dmUnread.value--;
+        }
+    }
 }
 
 function loadSysMessages() {
