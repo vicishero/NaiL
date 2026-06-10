@@ -7,6 +7,32 @@ const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL || "";
 const MAINNET_RPC_URL = process.env.MAINNET_RPC_URL || "";
 const ETHERSCAN_API_KEY = process.env.ETHERSCAN_API_KEY || "";
 
+const networks: HardhatUserConfig["networks"] = {
+  hardhat: {
+    chainId: 31337
+  },
+  localhost: {
+    url: "http://127.0.0.1:8545",
+    chainId: 31337
+  }
+};
+
+if (PRIVATE_KEY && SEPOLIA_RPC_URL) {
+  networks.sepolia = {
+    url: SEPOLIA_RPC_URL,
+    accounts: [PRIVATE_KEY],
+    chainId: 11155111
+  };
+}
+
+if (PRIVATE_KEY && MAINNET_RPC_URL) {
+  networks.mainnet = {
+    url: MAINNET_RPC_URL,
+    accounts: [PRIVATE_KEY],
+    chainId: 1
+  };
+}
+
 const config: HardhatUserConfig = {
   solidity: {
     version: "0.8.24",
@@ -17,25 +43,7 @@ const config: HardhatUserConfig = {
       }
     }
   },
-  networks: {
-    hardhat: {
-      chainId: 31337
-    },
-    localhost: {
-      url: "http://127.0.0.1:8545",
-      chainId: 31337
-    },
-    sepolia: {
-      url: SEPOLIA_RPC_URL,
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
-      chainId: 11155111
-    },
-    mainnet: {
-      url: MAINNET_RPC_URL,
-      accounts: PRIVATE_KEY ? [PRIVATE_KEY] : [],
-      chainId: 1
-    }
-  },
+  networks,
   etherscan: {
     apiKey: ETHERSCAN_API_KEY
   },
