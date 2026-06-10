@@ -9,31 +9,24 @@ contract NailoKOL is ERC721, ERC721Burnable, AccessControl {
     bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
 
     uint256 private _nextTokenId;
-    address public minter;
     mapping(address => uint256) public expireTime;
 
-    modifier onlyMinter() {
-        require(msg.sender == minter, "NailoKOL: caller is not the minter");
-        _;
-    }
+    event ExpireTimeUpdated(address indexed user, uint256 expireTime);
 
     constructor() ERC721("NailoKOL", "KOL") {
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(ADMIN_ROLE, msg.sender);
     }
 
-    function setMinter(address _minter) public onlyRole(ADMIN_ROLE) {
-        minter = _minter;
-    }
-
-    function mint(address to) public onlyMinter {
+    function mint(address to) public onlyRole(ADMIN_ROLE) {
         require(balanceOf(to) == 0, "NailoKOL: already has a token");
         uint256 tokenId = _nextTokenId++;
         _safeMint(to, tokenId);
     }
 
-    function setExpireTime(address user, uint256 time) public onlyMinter {
+    function setExpireTime(address user, uint256 time) public onlyRole(ADMIN_ROLE) {
         expireTime[user] = time;
+        emit ExpireTimeUpdated(user, time);
     }
 
     function nextTokenId() public view returns (uint256) {
