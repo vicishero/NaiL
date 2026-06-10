@@ -1,0 +1,23 @@
+{
+  "name": "nailo-contracts",
+  "version": "1.0.0",
+  "description": "Nailo ERC-20 smart contracts",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy": "hardhat run scripts/deploy.ts",
+    "deploy:localhost": "hardhat run scripts/deploy.ts --network localhost",
+    "node": "hardhat node"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^5.0.0",
+    "@types/node": "^20.12.0",
+    "hardhat": "^2.22.0",
+    "ts-node": "^10.9.0",
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.0.2",
+    "dotenv": "^16.4.0"
+  }
+}
