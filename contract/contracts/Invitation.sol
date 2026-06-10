@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.34;
 
 contract Invitation {
     uint256 public constant MAX_REFER_LEVEL = 100;
