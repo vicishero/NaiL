@@ -3,9 +3,11 @@ pragma solidity ^0.8.34;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 
-contract NailoKOL is ERC721, ERC721Burnable, Ownable {
+contract NailoKOL is ERC721, ERC721Burnable, AccessControl {
+    bytes32 public constant ADMIN_ROLE = keccak256("ADMIN_ROLE");
+
     uint256 private _nextTokenId;
     address public minter;
     mapping(address => uint256) public expireTime;
@@ -15,9 +17,12 @@ contract NailoKOL is ERC721, ERC721Burnable, Ownable {
         _;
     }
 
-    constructor() ERC721("NailoKOL", "KOL") Ownable(msg.sender) {}
+    constructor() ERC721("NailoKOL", "KOL") {
+        _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _grantRole(ADMIN_ROLE, msg.sender);
+    }
 
-    function setMinter(address _minter) public onlyOwner {
+    function setMinter(address _minter) public onlyRole(ADMIN_ROLE) {
         minter = _minter;
     }
 
@@ -54,5 +59,9 @@ contract NailoKOL is ERC721, ERC721Burnable, Ownable {
 
     function setApprovalForAll(address operator, bool approved) public pure override {
         revert("NailoKOL: setApprovalForAll is disabled");
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view override(ERC721, AccessControl) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }
