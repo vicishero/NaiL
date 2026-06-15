@@ -10,6 +10,7 @@ __debug_bin
 /.env
 /.envrc
 /release
+/server/release
 /data
 /custom
 /.custom
