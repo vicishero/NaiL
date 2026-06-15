@@ -1,0 +1,53 @@
+// Copyright 2023 ROC. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
+package jinzhu
+
+import (
+	"fmt"
+
+	"github.com/vicishero/NaiL/server/internal/core"
+	"github.com/vicishero/NaiL/server/internal/core/cs"
+	"gorm.io/gorm"
+)
+
+type trendsSrvA struct {
+	db *gorm.DB
+}
+
+func (s *trendsSrvA) GetIndexTrends(userId int64, limit int, offset int) (res []*cs.TrendsItem, total int64, err error) {
+	db := s.db.Table(_user_).
+		Joins(fmt.Sprintf("JOIN %s r ON r.he_uid=%s.id", _userRelation_, _user_)).
+		Joins(fmt.Sprintf("JOIN %s m ON r.he_uid=m.user_id", _userMetric_)).
+		Where("r.user_id=? AND m.tweets_count>0 AND m.is_del=0", userId)
+	if err = db.Count(&total).Error; err != nil || total == 0 {
+		return
+	}
+	if offset >= 0 && limit > 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+	if err = db.Order("r.style ASC, m.latest_trends_on DESC").Select("id", "username", "nickname", "avatar").Find(&res).Error; err == nil {
+		res = cs.DistinctTrends(res)
+	}
+	return
+}
+
+func (s *trendsSrvA) GetRecentUsers(limit int, offset int) (res []*cs.TrendsItem, total int64, err error) {
+	db := s.db.Table(_user_).
+		Where("status = ? AND is_del = ?", 1, 0) // 只获取正常状态的用户
+	if err = db.Count(&total).Error; err != nil || total == 0 {
+		return
+	}
+	if offset >= 0 && limit > 0 {
+		db = db.Limit(limit).Offset(offset)
+	}
+	err = db.Order("id DESC").Select("id", "username", "nickname", "avatar").Find(&res).Error
+	return
+}
+
+func newTrendsManageServentA(db *gorm.DB) core.TrendsManageServantA {
+	return &trendsSrvA{
+		db: db,
+	}
+}

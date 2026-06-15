@@ -1,0 +1,127 @@
+// Copyright 2022 ROC. All rights reserved.
+// Use of this source code is governed by a MIT style
+// license that can be found in the LICENSE file.
+
+// package jinzhu Core service implement base gorm+mysql/postgresql/sqlite3.
+// Jinzhu is the primary developer of gorm so use his name as
+// package name as a saluter.
+
+package jinzhu
+
+import (
+	"sync"
+
+	"github.com/Masterminds/semver/v3"
+	"github.com/vicishero/NaiL/server/internal/conf"
+	"github.com/vicishero/NaiL/server/internal/core"
+	"github.com/vicishero/NaiL/server/internal/dao/cache"
+	"github.com/vicishero/NaiL/server/internal/dao/security"
+	"github.com/vicishero/NaiL/server/pkg/snowflake"
+)
+
+var _onceInitial sync.Once
+
+type dataSrv struct {
+	core.WalletService
+	core.MessageService
+	core.NoticeService
+	core.TopicService
+	core.TweetService
+	core.TweetManageService
+	core.TweetHelpService
+	core.TweetMetricServantA
+	core.CommentService
+	core.CommentManageService
+	core.CommentMetricServantA
+	core.TrendsManageServantA
+	core.UserManageService
+	core.UserMetricServantA
+	core.ContactManageService
+	core.FollowingManageService
+	core.UserRelationService
+	core.SecurityService
+	core.AttachmentCheckService
+}
+
+type webDataSrvA struct {
+	core.TopicServantA
+	core.TweetServantA
+	core.TweetManageServantA
+	core.TweetHelpServantA
+}
+
+func NewDataService() (core.DataService, core.VersionInfo) {
+	lazyInitial()
+	db := conf.MustGormDB()
+	pvs := security.NewPhoneVerifyService()
+	tms := newTweetMetricServentA(db)
+	ums := newUserMetricServentA(db)
+	cms := newCommentMetricServentA(db)
+	cis := cache.NewEventCacheIndexSrv(tms)
+	ds := &dataSrv{
+		TweetMetricServantA:    tms,
+		CommentMetricServantA:  cms,
+		UserMetricServantA:     ums,
+		WalletService:          newWalletService(db),
+		MessageService:         newMessageService(db),
+		NoticeService:          newNoticeService(db),
+		TopicService:           newTopicService(db),
+		TweetService:           newTweetService(db),
+		TweetManageService:     newTweetManageService(db, cis),
+		TweetHelpService:       newTweetHelpService(db),
+		CommentService:         newCommentService(db),
+		CommentManageService:   newCommentManageService(db),
+		TrendsManageServantA:   newTrendsManageServentA(db),
+		UserManageService:      newUserManageService(db, ums),
+		ContactManageService:   newContactManageService(db),
+		FollowingManageService: newFollowingManageService(db),
+		UserRelationService:    newUserRelationService(db),
+		SecurityService:        newSecurityService(db, pvs),
+		AttachmentCheckService: security.NewAttachmentCheckService(),
+	}
+	return cache.NewCacheDataService(ds), ds
+}
+
+func NewWebDataServantA() (core.WebDataServantA, core.VersionInfo) {
+	lazyInitial()
+	db := conf.MustGormDB()
+	ds := &webDataSrvA{
+		TopicServantA:       newTopicServantA(db),
+		TweetServantA:       newTweetServantA(db),
+		TweetManageServantA: newTweetManageServantA(db),
+		TweetHelpServantA:   newTweetHelpServantA(db),
+	}
+	return ds, ds
+}
+
+func NewAuthorizationManageService() core.AuthorizationManageService {
+	return newAuthorizationManageService(conf.MustGormDB())
+}
+
+func (s *dataSrv) Name() string {
+	return "Gorm"
+}
+
+func (s *dataSrv) Version() *semver.Version {
+	return semver.MustParse("v0.2.0")
+}
+
+func (s *webDataSrvA) Name() string {
+	return "Gorm"
+}
+
+func (s *webDataSrvA) Version() *semver.Version {
+	return semver.MustParse("v0.1.0")
+}
+
+// lazyInitial do some package lazy initialize for performance
+func lazyInitial() {
+	_onceInitial.Do(func() {
+		initTableName()
+		workerID := int64(0)
+	if conf.SnowflakeSetting != nil {
+		workerID = conf.SnowflakeSetting.WorkerID
+	}
+	snowflake.Init(workerID)
+	})
+}

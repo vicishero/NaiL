@@ -1,2 +1,0 @@
-ALTER TABLE `sys_users` ADD COLUMN `mfa_secret` VARCHAR(64) NOT NULL DEFAULT '' COMMENT 'MFA密钥(base32编码)';
-ALTER TABLE `sys_users` ADD COLUMN `mfa_bound` TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'MFA是否已绑定';
