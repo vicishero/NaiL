@@ -8,7 +8,7 @@ import "time"
 
 // SysUser 管理员用户表模型
 type SysUser struct {
-	ID          uint      `gorm:"primarykey" json:"id"`
+	ID          uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DeletedAt   time.Time `gorm:"index" json:"-"`

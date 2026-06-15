@@ -10,7 +10,7 @@ import (
 
 // SysDictionaryDetail 字典详情模型
 type SysDictionaryDetail struct {
-	ID           uint      `gorm:"primarykey" json:"id"`
+	ID           uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt    time.Time `json:"createdAt"`
 	UpdatedAt    time.Time `json:"updatedAt"`
 	DeletedAt    time.Time `gorm:"index" json:"-"`

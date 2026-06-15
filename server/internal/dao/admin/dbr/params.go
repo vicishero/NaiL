@@ -10,7 +10,7 @@ import (
 
 // SysParams 参数模型
 type SysParams struct {
-	ID        uint      `gorm:"primarykey" json:"id"`
+	ID        uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 	DeletedAt time.Time `gorm:"index" json:"-"`

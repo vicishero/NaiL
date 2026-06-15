@@ -58,6 +58,8 @@ func (s *AuthServant) Login(c *gin.Context) {
 
 	resp, err := s.service.Login(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
+		// 记录登录失败日志
+		s.recordLoginLog(c, req.Username, false)
 		app.NewResponse(c).ToErrorResponse(xerror.UnauthorizedAuthFailed.WithDetails(err.Error()))
 		return
 	}
@@ -108,11 +110,67 @@ func (s *AuthServant) Login(c *gin.Context) {
 		user["authority"] = gin.H{"defaultRouter": "dashboard"}
 	}
 
+	// 记录登录成功日志
+	s.recordLoginLog(c, req.Username, true)
+
 	app.NewResponse(c).ToResponse(gin.H{
 		"user":      user,
 		"token":     resp.Token,
 		"expiresAt": resp.ExpiresAt,
 	})
+}
+
+// recordLoginLog 记录登录日志
+func (s *AuthServant) recordLoginLog(c *gin.Context, username string, status bool) {
+	ua := c.GetHeader("User-Agent")
+	browser, os, platform := parseUserAgent(ua)
+	log := &dbr.SysLoginLog{
+		Username:  username,
+		Status:    &status,
+		Ip:        c.ClientIP(),
+		Browser:   browser,
+		Os:        os,
+		Platform:  platform,
+		LoginTime: time.Now(),
+	}
+	// 异步记录，不阻塞登录响应（用 Background context 防止请求 context 取消）
+	go s.service.CreateLoginLog(context.Background(), log)
+}
+
+// parseUserAgent 简单解析User-Agent
+func parseUserAgent(ua string) (browser, osName, platform string) {
+	// 简单解析，生产环境可用专业库
+	browser = "未知"
+	osName = "未知"
+	platform = "Web"
+	if ua == "" {
+		return
+	}
+	switch {
+	case strings.Contains(ua, "Edg"):
+		browser = "Edge"
+	case strings.Contains(ua, "Firefox"):
+		browser = "Firefox"
+	case strings.Contains(ua, "Chrome"):
+		browser = "Chrome"
+	case strings.Contains(ua, "Safari"):
+		browser = "Safari"
+	}
+	switch {
+	case strings.Contains(ua, "Windows"):
+		osName = "Windows"
+	case strings.Contains(ua, "Mac"):
+		osName = "macOS"
+	case strings.Contains(ua, "Linux"):
+		osName = "Linux"
+	case strings.Contains(ua, "Android"):
+		osName = "Android"
+		platform = "Mobile"
+	case strings.Contains(ua, "iPhone") || strings.Contains(ua, "iPad"):
+		osName = "iOS"
+		platform = "Mobile"
+	}
+	return
 }
 
 // Captcha 生成验证码

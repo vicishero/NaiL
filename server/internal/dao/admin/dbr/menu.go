@@ -8,7 +8,7 @@ import "time"
 
 // SysBaseMenu 菜单表模型
 type SysBaseMenu struct {
-	ID          uint      `gorm:"primarykey" json:"id"`
+	ID          uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DeletedAt   time.Time `gorm:"index" json:"-"`

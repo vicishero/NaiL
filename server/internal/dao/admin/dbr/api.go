@@ -8,7 +8,7 @@ import "time"
 
 // SysApi API接口表模型
 type SysApi struct {
-	ID          uint      `gorm:"primarykey" json:"id"`
+	ID          uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DeletedAt   time.Time `gorm:"index" json:"-"`

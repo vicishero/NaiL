@@ -52,7 +52,7 @@
         </el-table-column>
         <el-table-column align="left" label="浏览器/设备" prop="agent" show-overflow-tooltip />
         <el-table-column align="left" label="登录时间" width="180">
-          <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
+          <template #default="scope">{{ formatDate(scope.row.loginTime || scope.row.CreatedAt) }}</template>
         </el-table-column>
         <el-table-column align="left" label="操作" width="120">
           <template #default="scope">

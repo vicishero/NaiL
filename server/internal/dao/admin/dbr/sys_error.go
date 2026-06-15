@@ -10,7 +10,7 @@ import (
 
 // SysError 系统错误日志模型
 type SysError struct {
-	ID          uint      `gorm:"primarykey" json:"id"`
+	ID          uint      `gorm:"primarykey" json:"ID"`
 	CreatedAt   time.Time `json:"createdAt"`
 	UpdatedAt   time.Time `json:"updatedAt"`
 	DeletedAt   time.Time `gorm:"index" json:"-"`

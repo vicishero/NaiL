@@ -163,7 +163,7 @@ func registerApiRoutes(g *gin.RouterGroup, s *AuthServant) {
 		registerGetPost(apiGroup, "/getApiList", s.GetApiList)
 		registerGetPost(apiGroup, "/getAllApiGroups", s.GetAllApiGroups)
 		registerGetPost(apiGroup, "/getApiGroups", s.GetAllApiGroups)
-		apiGroup.POST("/syncApi", s.SyncApi)
+		registerGetPost(apiGroup, "/syncApi", s.SyncApi)
 		apiGroup.POST("/enterSyncApi", s.EnterSyncApi)
 		apiGroup.POST("/freshCasbin", s.FreshCasbin)
 		registerGetPost(apiGroup, "/getAllApis", s.GetAllApis)
@@ -297,7 +297,7 @@ func registerGvaPermissionRoutes(g *gin.RouterGroup, s *AuthServant) {
 		sysExportGroup.GET("/getSysExportTemplateList", GvaEmptyList)
 		sysExportGroup.GET("/findSysExportTemplate", GvaEmptyObject)
 		sysExportGroup.POST("/exportExcel", GvaSuccess)
-		sysExportGroup.POST("/exportTemplate", GvaSuccess)
+		registerGetPost(sysExportGroup, "/exportTemplate", GvaSuccess)
 		sysExportGroup.POST("/previewSQL", GvaSuccess)
 	}
 
