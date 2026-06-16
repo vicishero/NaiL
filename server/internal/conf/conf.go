@@ -50,6 +50,7 @@ var (
 	TweetSearchSetting      *tweetSearchConf
 	ZincSetting             *zincConf
 	MeiliSetting            *meiliConf
+		DifySetting             *difyConf
 	ObjectStorage           *objectStorageConf
 	AliOSSSetting           *aliOSSConf
 	COSSetting              *cosConf
@@ -114,6 +115,7 @@ func setupSetting(suite []string, noDefault bool) error {
 		"TweetSearch":       &TweetSearchSetting,
 		"Zinc":              &ZincSetting,
 		"Meili":             &MeiliSetting,
+		"Dify":              &DifySetting,
 		"Redis":             &redisSetting,
 		"JWT":               &JWTSetting,
 		"AdminSettings":     &AdminSettingsSetting,

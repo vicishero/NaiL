@@ -108,3 +108,7 @@ LocalOSS:
   Secure: false
   Bucket: paopao
   Domain: 192.168.30.44:8008
+
+Dify:
+  URL: "https://api.dify.ai"
+  APIKey: "app-hwL3g2syuknNoj4SjBnsEhbz"

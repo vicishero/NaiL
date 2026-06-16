@@ -9,6 +9,8 @@
           <el-select v-model="searchInfo.visibility" placeholder="全部" clearable style="width:100px">
             <el-option label="公开" :value="90" />
             <el-option label="私密" :value="0" />
+            <el-option label="好友可见" :value="50" />
+            <el-option label="关注可见" :value="60" />
           </el-select>
         </el-form-item>
         <el-form-item>
@@ -35,7 +37,7 @@
         <el-table-column align="left" label="评论" min-width="70" prop="commentCount" />
         <el-table-column align="left" label="收藏" min-width="70" prop="collectionCount" />
         <el-table-column align="left" label="可见性" min-width="80">
-          <template #default="scope">{{ scope.row.visibility === 90 ? '公开' : scope.row.visibility === 0 ? '私密' : scope.row.visibility }}</template>
+          <template #default="scope">{{ visibilityLabel(scope.row.visibility) }}</template>
         </el-table-column>
         <el-table-column align="left" label="置顶" min-width="70">
           <template #default="scope"><el-tag :type="scope.row.isTop ? 'warning' : 'info'" size="small">{{ scope.row.isTop ? '是' : '否' }}</el-tag></template>
@@ -77,6 +79,8 @@
           <el-select v-model="form.visibility" style="width:100%">
             <el-option label="公开" :value="90" />
             <el-option label="私密" :value="0" />
+            <el-option label="好友可见" :value="50" />
+            <el-option label="关注可见" :value="60" />
           </el-select>
         </el-form-item>
         <el-form-item label="标记">
@@ -128,6 +132,11 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { formatDate } from '@/utils/format'
 
 defineOptions({ name: 'h5Posts' })
+
+const visibilityLabel = (v) => {
+  const map = { 90: '公开', 0: '私密', 50: '好友可见', 60: '关注可见' }
+  return map[v] ?? v
+}
 
 const page = ref(1), total = ref(0), pageSize = ref(10), tableData = ref([])
 const searchInfo = reactive({ userId: '', visibility: undefined })

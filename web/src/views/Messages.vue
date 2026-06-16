@@ -96,13 +96,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
-import { useRoute } from 'vue-router';
+import { useRoute, useRouter } from 'vue-router';
 import { useStoreMain } from '@/store/main';
 import { storeToRefs } from 'pinia';
 import { Api } from '@/utils/request';
 import InfiniteLoadMore from '@/components/infinite-load-more.vue';
 
 const route = useRoute();
+const router = useRouter();
 const storeMain = useStoreMain();
 const { unreadMsgCount } = storeToRefs(storeMain);
 
@@ -146,8 +147,8 @@ const chatList = ref<ChatConv[]>([
     { id: 7, name: '周秘书', avatar: '', lastMsg: '明天的会议改到下午3点', time: '周一', unread: 0 },
 ]);
 
-function openChat(conv: ChatConv) {
-    window.$message?.info('聊天功能开发中，请先使用私信功能');
+function openChat(_conv: ChatConv) {
+    router.push({ name: 'chat' });
 }
 
 // === 私信 (whisper + requesting) ===

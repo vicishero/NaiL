@@ -13,6 +13,7 @@ __debug_bin
 /server/release
 /data
 /custom
+/server/custom
 /.custom
 /run.sh
 /web/dist

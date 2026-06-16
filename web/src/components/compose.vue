@@ -2,13 +2,6 @@
     <div>
         <div class="compose-wrap" v-if="userInfo.id > 0">
             <div class="compose-line">
-                <div class="compose-user">
-                    <n-avatar
-                        round
-                        :size="30"
-                        :src="userInfo.avatar"
-                    />
-                </div>
                 <n-mention
                     type="textarea"
                     size="large"
@@ -147,19 +140,7 @@
                             </template>
                         </n-button>
 
-                         <n-button
-                            v-if="allowTweetVisibility"
-                            quaternary
-                            circle
-                            type="primary"
-                            @click.stop="switchEye"
-                        >
-                            <template #icon>
-                                <n-icon size="20" color="var(--primary-color)">
-                                    <eye-outline />
-                                </n-icon>
-                            </template>
-                        </n-button>
+
                     </div>
 
                     <div class="submit-wrap">
@@ -176,16 +157,6 @@
                             </template>
                             已输入{{ content.length }}字
                         </n-tooltip>
-
-                        <n-button
-                            :loading="submitting"
-                            @click="submitPost"
-                            type="primary"
-                            secondary
-                            round
-                        >
-                            发布
-                        </n-button>
                     </div>
                 </div>
 
@@ -210,7 +181,7 @@
                 </div>
             </n-upload>
 
-            <div class="eye-wrap" v-if="showEyeSet">
+            <div class="eye-wrap" v-if="allowTweetVisibility">
                 <n-radio-group v-model:value="visitType" name="radiogroup">
                     <n-space>
                         <n-radio
@@ -232,6 +203,18 @@
                 >
                     <template #create-button-default> 创建链接 </template>
                 </n-dynamic-input>
+            </div>
+
+            <div class="submit-bottom">
+                <n-button
+                    :loading="submitting"
+                    @click="submitPost"
+                    type="primary"
+                    block
+                    round
+                >
+                    发布
+                </n-button>
             </div>
         </div>
 
@@ -286,7 +269,6 @@ import {
   VideocamOutline,
   AttachOutline,
   CompassOutline,
-  EyeOutline,
 } from '@vicons/ionicons5';
 import { createPost } from '@/api/post';
 import { parsePostTag } from '@/utils/content';
@@ -310,7 +292,6 @@ const optionsRef = ref<MentionOption[]>([]);
 const loading = ref(false);
 const submitting = ref(false);
 const showLinkSet = ref(false);
-const showEyeSet = ref(false);
 const content = ref('');
 const links = ref([]);
 
@@ -347,16 +328,6 @@ const visibilities = computed(() => {
 
 const switchLink = () => {
   showLinkSet.value = !showLinkSet.value;
-  if (showLinkSet.value && showEyeSet.value) {
-    showEyeSet.value = false;
-  }
-};
-
-const switchEye = () => {
-  showEyeSet.value = !showEyeSet.value;
-  if (showEyeSet.value && showLinkSet.value) {
-    showLinkSet.value = false;
-  }
 };
 
 // 加载at用户列表
@@ -615,7 +586,6 @@ const submitPost = () => {
 
       // 置空
       showLinkSet.value = false;
-      showEyeSet.value = false;
       uploadRef.value?.clear();
       fileQueue.value = [];
       content.value = '';
@@ -634,17 +604,8 @@ const triggerAuth = (key: string) => {
   storeMain.triggerAuthKey(key);
 };
 onMounted(() => {
-  const defaultVisibility = profile.value.defaultTweetVisibility;
-  if (profile.value.useFriendship && defaultVisibility === 'friend') {
-    defaultVisitType.value = VisibilityEnum.FRIEND;
-  } else if (defaultVisibility === 'following') {
-    defaultVisitType.value = VisibilityEnum.Following;
-  } else if (defaultVisibility === 'public') {
-    defaultVisitType.value = VisibilityEnum.PUBLIC;
-  } else {
-    defaultVisitType.value = VisibilityEnum.PRIVATE;
-  }
-  visitType.value = defaultVisitType.value;
+  defaultVisitType.value = VisibilityEnum.PUBLIC;
+  visitType.value = VisibilityEnum.PUBLIC;
 });
 </script>
 
@@ -658,16 +619,15 @@ onMounted(() => {
         display: flex;
         flex-direction: row;
 
-        .compose-user {
-            width: 42px;
-            height: 42px;
-            display: flex;
-            align-items: center;
+        .n-mention,
+        textarea {
+            min-height: 200px;
         }
+
 
         &.compose-options {
             margin-top: 6px;
-            padding-left: 42px;
+            padding-left: 0;
             display: flex;
             justify-content: space-between;
 
@@ -684,11 +644,20 @@ onMounted(() => {
         }
     }
     .link-wrap {
-        margin-left: 42px;
+        
         margin-right: 42px;
     }
+    .submit-bottom {
+        margin: 16px 0 8px 0;
+        button {
+            width: 100%;
+        }
+    }
     .eye-wrap {
-        margin-left: 64px;
+        margin: 12px 0 8px 0;
+        padding-bottom: 4px;
+        border-top: 1px solid var(--border-color);
+        padding-top: 12px;
     }
     .login-only-wrap {
         display: flex;
@@ -714,7 +683,7 @@ onMounted(() => {
 }
 .attachment-list-wrap {
     margin-top: 12px;
-    margin-left: 42px;
+
     .n-upload-file-info__thumbnail {
         overflow: hidden;
     }
@@ -723,5 +692,10 @@ onMounted(() => {
     .compose-wrap {
         background-color: rgba(16, 16, 20, 0.75);
     }
+}
+
+/* 隐藏上传文件列表中的文件名 */
+.n-upload-file-info__name {
+    display: none !important;
 }
 </style>

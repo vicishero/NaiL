@@ -203,6 +203,11 @@ type meiliConf struct {
 	Secure bool
 }
 
+type difyConf struct {
+	URL    string
+	APIKey string
+}
+
 type databaseConf struct {
 	TablePrefix string
 	LogLevel    string

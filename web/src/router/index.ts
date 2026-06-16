@@ -83,6 +83,14 @@ const routes = [
     component: () => import('@/views/Messages.vue'),
   },
   {
+    path: '/chat',
+    name: 'chat',
+    meta: {
+      title: 'Dify 智能助手',
+    },
+    component: () => import('@/views/Chat.vue'),
+  },
+  {
     path: '/collection',
     name: 'collection',
     meta: {

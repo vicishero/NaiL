@@ -30,11 +30,11 @@
                         </router-view>
                     </div>
 
-                    <!-- 发帖 FAB -->
-                    <fab-compose />
+                    <!-- 发帖 FAB（聊天页隐藏） -->
+                    <fab-compose v-if="route.name !== 'chat'" />
 
-                    <!-- 底部 TabBar -->
-                    <bottom-tab-bar />
+                    <!-- 底部 TabBar（聊天页隐藏） -->
+                    <bottom-tab-bar v-if="route.name !== 'chat'" />
 
                     <!-- 登录/注册公共组件 -->
                     <auth />
@@ -44,7 +44,7 @@
                         v-model:show="composeModalShow"
                         preset="card"
                         title="发帖"
-                        style="max-width: 600px;"
+                        style="max-width: 460px;"
                         :mask-closable="true"
                     >
                         <compose
@@ -130,7 +130,7 @@ watch(() => [userInfo.value.id, profile.value.defaultMsgLoopInterval], () => {
                     .catch((err: any) => {
                         console.log(err);
                     });
-            }, profile.value.defaultMsgLoopInterval || 5000);
+            }, profile.value.defaultMsgLoopInterval || 30000);
         }
     } else {
         if (msgLoop.value) {
