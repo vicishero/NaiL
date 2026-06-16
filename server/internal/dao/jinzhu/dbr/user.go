@@ -23,6 +23,7 @@ type User struct {
 	Salt     string `json:"salt"`
 	Status   int    `json:"status"`
 	Avatar   string `json:"avatar"`
+	CoverImage  string `json:"cover_image"`
 	Balance  int64  `json:"balance"`
 	IsAdmin  bool   `json:"is_admin"`
 	IsKOL    bool   `json:"is_kol"`
@@ -36,6 +37,7 @@ type UserFormated struct {
 	Username    string `json:"username"`
 	Status      int    `json:"status"`
 	Avatar      string `json:"avatar"`
+	CoverImage  string `json:"cover_image"`
 	IsAdmin     bool   `json:"is_admin"`
 	IsKOL       bool   `json:"is_kol"`
 	ChatEnabled  bool   `json:"chat_enabled"`

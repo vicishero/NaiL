@@ -52,12 +52,8 @@
                     @click="goUser(user.username)"
                 >
                     <div class="category-avatar">
-                        <n-avatar
-                            :size="80"
-                            :src="user.avatar"
-                            :fallback-src="defaultAvatar"
-                            shape="square"
-                        />
+                        <img v-if="user.cover_image" :src="user.cover_image" class="cover-img" />
+                        <n-avatar v-else :size="80" :src="user.avatar" :fallback-src="defaultAvatar" shape="square" />
                     </div>
                     <span class="category-nickname">{{ user.nickname }}</span>
                 </div>
@@ -88,22 +84,6 @@ interface Category {
 }
 
 // KOL分类数据
-const kolCategoryNames = [
-    '初恋学生', '都市御姐', '温柔少妇', '运动少女', '暗黑病娇',
-    '慵懒纯欲', '精灵奇幻', '街头辣妹', '文艺知性', '邻家治愈',
-];
-const mockCategories = ref<Category[]>(
-    kolCategoryNames.map((name, i) => ({
-        id: i + 1,
-        name,
-        users: Array.from({ length: 6 }, (_, j) => ({
-            id: (i + 1) * 1000 + j,
-            nickname: `${name}${j + 1}号`,
-            avatar: '',
-            username: `kol_${i + 1}_${j + 1}`,
-        })),
-    }))
-);
 const categories = ref<Category[]>([]);
 
 function goSearch() {
@@ -126,7 +106,7 @@ onMounted(async () => {
 
     // 加载KOL分类数据
     try {
-        const apiRes = await fetch('/v1/explore/kolCategories');
+        const apiRes = await fetch(import.meta.env.VITE_HOST + '/v1/explore/kolCategories');
         const json = await apiRes.json();
         if (json.code === 0 && json.data?.categories) {
             categories.value = json.data.categories.map((c: any) => ({
@@ -136,14 +116,15 @@ onMounted(async () => {
                     id: Number(u.id),
                     nickname: u.nickname,
                     avatar: u.avatar || '',
+                    cover_image: u.cover_image || '',
                     username: u.username,
                 })),
             }));
         } else {
-            categories.value = mockCategories.value;
+            categories.value = [];
         }
     } catch {
-        categories.value = mockCategories.value;
+        categories.value = [];
     }
 });
 </script>
@@ -244,6 +225,7 @@ onMounted(async () => {
     border-radius: 8px;
     background: #f0f0f0;
 
+	.cover-img { width: 100%; height: 100%; object-fit: cover; }
     :deep(.n-avatar) {
         width: 100%;
         height: 100%;

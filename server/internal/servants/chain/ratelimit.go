@@ -32,6 +32,12 @@ func RateLimit() gin.HandlerFunc {
 		// 获取请求路径
 		path := c.Request.URL.Path
 
+		// OSS/静态资源请求不做任何限制
+		if strings.HasPrefix(path, "/oss/") {
+			c.Next()
+			return
+		}
+
 		// 获取客户端IP
 		clientIP := getClientIP(c)
 

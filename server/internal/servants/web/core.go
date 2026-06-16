@@ -60,6 +60,7 @@ func (s *coreSrv) GetUserInfo(req *web.UserInfoReq) (*web.UserInfoResp, error) {
 		Username:    user.Username,
 		Status:      user.Status,
 		Avatar:      user.Avatar,
+		CoverImage: user.CoverImage,
 		Balance:     user.Balance,
 		IsAdmin:     user.IsAdmin,
 		IsKOL:       user.IsKOL,
@@ -389,27 +390,32 @@ func (s *coreSrv) ChangeNickname(req *web.ChangeNicknameReq) error {
 }
 
 func (s *coreSrv) ChangeAvatar(req *web.ChangeAvatarReq) (xerr error) {
-	defer func() {
-		if xerr != nil {
-			deleteOssObjects(s.oss, []string{req.Avatar})
+	user := req.User
+	if req.Avatar != "" {
+		defer func() {
+			if xerr != nil { deleteOssObjects(s.oss, []string{req.Avatar}) }
+		}()
+		if err := s.Ds.CheckAttachment(req.Avatar); err != nil {
+			logrus.Errorf("Ds.CheckAttachment failed: %s", err)
+			return xerror.InvalidParams
 		}
-	}()
-
-	if err := s.Ds.CheckAttachment(req.Avatar); err != nil {
-		logrus.Errorf("Ds.CheckAttachment failed: %s", err)
+		if err := s.oss.PersistObject(s.oss.ObjectKey(req.Avatar)); err != nil {
+			logrus.Errorf("Ds.ChangeUserAvatar persist object failed: %s", err)
+			return xerror.ServerError
+		}
+		user.Avatar = req.Avatar
+	} else if req.CoverImage != "" {
+		user.CoverImage = req.CoverImage
+		if err := s.oss.PersistObject(s.oss.ObjectKey(req.CoverImage)); err != nil {
+			return xerror.ServerError
+		}
+	} else {
 		return xerror.InvalidParams
 	}
-	if err := s.oss.PersistObject(s.oss.ObjectKey(req.Avatar)); err != nil {
-		logrus.Errorf("Ds.ChangeUserAvatar persist object failed: %s", err)
-		return xerror.ServerError
-	}
-	user := req.User
-	user.Avatar = req.Avatar
 	if err := s.Ds.UpdateUser(user); err != nil {
 		logrus.Errorf("Ds.UpdateUser failed: %s", err)
 		return xerror.ServerError
 	}
-	// 缓存处理
 	onChangeUsernameEvent(user.ID, user.Username)
 	return nil
 }

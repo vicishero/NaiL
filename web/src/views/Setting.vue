@@ -16,6 +16,27 @@
                     @change="onFileSelected"
                 />
             </div>
+            <!-- 展示图 -->
+            <div class="base-line cover">
+                <div class="cover-preview" @click="triggerCoverInput">
+                    <img v-if="userInfo.cover_image" :src="userInfo.cover_image" class="cover-img" />
+                    <div v-else class="cover-placeholder">+ 展示图</div>
+                </div>
+                <n-button size="small" @click="triggerCoverInput">更改展示图</n-button>
+                <input ref="coverInputRef" type="file" accept="image/png,image/jpg,image/jpeg" style="display:none" @change="onCoverSelected" />
+            </div>
+            <!-- 展示图裁剪弹窗 -->
+            <n-modal v-model:show="showCoverCropper" preset="card" title="裁剪展示图" style="width:560px" :mask-closable="false" @after-leave="resetCoverCropper">
+                <div class="cropper-container">
+                    <vue-cropper v-if="coverCropperSrc" ref="coverCropperRef" :src="coverCropperSrc" :aspect-ratio="3/4" :view-mode="2" :auto-crop-area="1" :guides="true" :background="true" :rotatable="true" :scalable="true" :zoomable="true" :zoom-on-touch="true" :zoom-on-wheel="true" :crop-box-movable="true" :crop-box-resizable="true" :min-crop-box-width="240" :min-crop-box-height="320" @ready="onCoverCropperReady" />
+                </div>
+                <template #footer>
+                    <div class="cropper-footer">
+                        <n-button quaternary round @click="showCoverCropper = false">取消</n-button>
+                        <n-button type="primary" round :loading="coverCropping" @click="handleCoverCrop">确认</n-button>
+                    </div>
+                </template>
+            </n-modal>
             <!-- 头像裁剪弹窗 -->
             <n-modal
                 v-model:show="showCropper"
@@ -407,6 +428,58 @@ const onCropperReady = () => {
   cropper.setCropBoxData({ left, top, width: size, height: size });
 };
 
+// === 展示图裁剪 ===
+const coverInputRef = ref<any>();
+const coverCropperRef = ref<any>();
+const coverCropperSrc = ref('');
+const showCoverCropper = ref(false);
+const coverCropping = ref(false);
+
+const triggerCoverInput = () => { coverInputRef.value?.click() };
+
+const onCoverSelected = (e: Event) => {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  if (!['image/png', 'image/jpg', 'image/jpeg'].includes(file.type)) { window.$message.warning('仅允许 png/jpg 格式'); return }
+  if (file.size > 5 * 1024 * 1024) { window.$message.warning('图片大小不能超过5MB'); return }
+  const reader = new FileReader();
+  reader.onload = (ev) => { coverCropperSrc.value = ev.target?.result as string; showCoverCropper.value = true }
+  reader.readAsDataURL(file);
+  input.value = '';
+};
+
+const handleCoverCrop = async () => {
+  coverCropping.value = true;
+  try {
+    const canvas = coverCropperRef.value?.getCroppedCanvas({ width: 480, height: 640 });
+    if (!canvas) { window.$message.error('裁剪失败'); coverCropping.value = false; return }
+    const blob = await new Promise<Blob>((r) => canvas.toBlob(r as BlobCallback, 'image/jpeg', 0.9));
+    const formData = new FormData();
+    formData.append('type', 'public/avatar');
+    formData.append('file', blob, 'cover.jpg');
+    const token = 'Bearer ' + localStorage.getItem(TOKEN_KEY);
+    const res = await fetch(import.meta.env.VITE_HOST + '/v1/attachment', { method: 'POST', headers: { Authorization: token }, body: formData });
+    const data = await res.json();
+    if (data.code === 0) {
+      await Api.v1.user.post.avatar({ cover_image: data.data.content });
+      storeUser.updateUserinfo({ ...userInfo.value, cover_image: data.data.content });
+      window.$message.success('展示图更新成功');
+      showCoverCropper.value = false;
+    } else { window.$message.error(data.msg || '上传失败') }
+  } catch (err) { console.error(err); window.$message.error('上传失败') }
+  finally { coverCropping.value = false }
+};
+
+const resetCoverCropper = () => { coverCropperSrc.value = '' };
+
+const onCoverCropperReady = () => {
+  const c = coverCropperRef.value; if (!c) return;
+  const d = c.getContainerData();
+  const w = Math.min(240, d.width), h = Math.min(320, d.height);
+  c.setCropBoxData({ left: (d.width - w) / 2, top: (d.height - h) / 2, width: w, height: h });
+};
+
 const validatePasswordStartWith = (rule: FormItemRule, value: any) => {
   return (
     !!modelData.password &&
@@ -598,6 +671,13 @@ onMounted(() => {
             margin-right: 10px;
             width: 120px;
         }
+    }
+
+    .cover {
+        display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-top: 16px;
+        .cover-preview { width: 160px; height: 213px; border-radius: 8px; overflow: hidden; border: 2px dashed var(--border-color,#ddd); cursor: pointer; display: flex; align-items: center; justify-content: center; background: var(--body-color,#f5f5f5); }
+        .cover-img { width: 100%; height: 100%; object-fit: cover; }
+        .cover-placeholder { color: #999; font-size: 14px; }
     }
 
     .avatar {

@@ -32,6 +32,19 @@
             <el-avatar v-else :size="40">{{ scope.row.nickname?.charAt(0) || 'U' }}</el-avatar>
           </template>
         </el-table-column>
+        <el-table-column align="left" label="展示图" min-width="80">
+          <template #default="scope">
+            <el-image
+              v-if="scope.row.coverImage"
+              :src="scope.row.coverImage"
+              style="width:40px;height:53px;border-radius:4px;object-fit:cover;cursor:pointer"
+              :preview-src-list="[scope.row.coverImage]"
+              preview-teleported
+              fit="cover"
+            />
+            <span v-else style="color:#ccc">-</span>
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="昵称" min-width="120" prop="nickname" />
         <el-table-column align="left" label="用户名" min-width="120" prop="username" />
         <el-table-column align="left" label="钱包地址" min-width="280" prop="walletAddress">

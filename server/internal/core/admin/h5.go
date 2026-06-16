@@ -29,6 +29,7 @@ type H5UserItem struct {
 	WalletAddress  string `json:"walletAddress"`
 	Bio            string `json:"bio"`
 	Avatar         string `json:"avatar"`
+	CoverImage     string `json:"coverImage"`
 	Status         int    `json:"status"`
 	IsAdmin        bool   `json:"isAdmin"`
 	IsKOL          bool   `json:"isKOL"`
@@ -263,10 +264,11 @@ type ExploreKolCategory struct {
 }
 
 type ExploreKolUser struct {
-	ID       int64  `json:"id,string"`
-	Nickname string `json:"nickname"`
-	Username string `json:"username"`
-	Avatar   string `json:"avatar"`
+	ID         int64  `json:"id,string"`
+	Nickname   string `json:"nickname"`
+	Username   string `json:"username"`
+	Avatar     string `json:"avatar"`
+	CoverImage string `json:"cover_image"`
 }
 
 // H5SysMsgListReq 系统消息列表请求

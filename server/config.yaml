@@ -59,7 +59,7 @@ RateLimit:
   # 是否启用限流：true/false
   Enable: true
   # 默认限流阈值：每个时间窗口允许的请求数
-  DefaultLimit: 100
+  DefaultLimit: 1000
   # 默认时间窗口：单位秒
   DefaultDur: 60
   # 自定义限流规则（可配置多条）

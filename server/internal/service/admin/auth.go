@@ -1155,6 +1155,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 		Username  string `gorm:"column:username"`
 		Phone     string `gorm:"column:phone"`
 		Avatar    string `gorm:"column:avatar"`
+		CoverImage string `gorm:"column:cover_image"`
 		Status    int    `gorm:"column:status"`
 		IsAdmin   bool   `gorm:"column:is_admin"`
 		IsKOL     bool   `gorm:"column:is_kol"`
@@ -1222,6 +1223,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 			WalletAddress: r.Address,
 			Bio:           "",
 			Avatar:        r.Avatar,
+				CoverImage:     r.CoverImage,
 			Status:        r.Status,
 			IsAdmin:       r.IsAdmin,
 			IsKOL:         r.IsKOL,
@@ -1241,6 +1243,7 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Username  string `gorm:"column:username"`
 		Phone     string `gorm:"column:phone"`
 		Avatar    string `gorm:"column:avatar"`
+		CoverImage string `gorm:"column:cover_image"`
 		Status    int    `gorm:"column:status"`
 		IsAdmin   bool   `gorm:"column:is_admin"`
 		IsKOL     bool   `gorm:"column:is_kol"`
@@ -1328,6 +1331,7 @@ func (s *adminService) GetH5PostList(ctx context.Context, req *admin.H5PostListR
 		Nickname string `gorm:"column:nickname"`
 		Username string `gorm:"column:username"`
 		Avatar   string `gorm:"column:avatar"`
+		CoverImage string `gorm:"column:cover_image"`
 	}
 
 	var total int64
@@ -1467,6 +1471,7 @@ func (s *adminService) GetH5Post(ctx context.Context, postID int64) (*admin.H5Po
 		Nickname string `gorm:"column:nickname"`
 		Username string `gorm:"column:username"`
 		Avatar   string `gorm:"column:avatar"`
+		CoverImage string `gorm:"column:cover_image"`
 	}
 	var user pUser
 	s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ?", row.UserID).First(&user)
@@ -1825,6 +1830,7 @@ func (s *adminService) GetKolManageList(ctx context.Context, req *admin.H5KolMan
 		Nickname     string `gorm:"column:nickname"`
 		Username     string `gorm:"column:username"`
 		Avatar       string `gorm:"column:avatar"`
+		CoverImage string `gorm:"column:cover_image"`
 		CreatedOn    int64  `gorm:"column:created_on"`
 		CategoryID   int64  `gorm:"column:category_id"`
 		SystemPrompt  string `gorm:"column:system_prompt"`
@@ -1912,6 +1918,7 @@ func (s *adminService) GetExploreKolCategories(ctx context.Context) (*admin.Expl
 		Nickname string `gorm:"column:nickname"`
 		Username string `gorm:"column:username"`
 		Avatar   string `gorm:"column:avatar"`
+		CoverImage string `gorm:"column:cover_image"`
 	}
 
 	result := make([]admin.ExploreKolCategory, 0, len(cats))
@@ -1922,7 +1929,7 @@ func (s *adminService) GetExploreKolCategories(ctx context.Context) (*admin.Expl
 			Where("u.is_del = 0 AND u.is_kol = 1").Limit(6).Find(&users)
 		eu := make([]admin.ExploreKolUser, len(users))
 		for i, u := range users {
-			eu[i] = admin.ExploreKolUser{ID: u.ID, Nickname: u.Nickname, Username: u.Username, Avatar: u.Avatar}
+			eu[i] = admin.ExploreKolUser{ID: u.ID, Nickname: u.Nickname, Username: u.Username, Avatar: u.Avatar, CoverImage: u.CoverImage}
 		}
 		result = append(result, admin.ExploreKolCategory{ID: c.ID, Name: c.Name, Users: eu})
 	}

@@ -16,8 +16,9 @@ import (
 type MessageStyle = cs.MessageStyle
 
 type ChangeAvatarReq struct {
-	BaseInfo `json:"-" binding:"-"`
-	Avatar   string `json:"avatar" form:"avatar" binding:"required"`
+	BaseInfo   `json:"-" binding:"-"`
+	Avatar     string `json:"avatar" form:"avatar"`
+	CoverImage string `json:"cover_image" form:"cover_image"`
 }
 
 type UserInfoReq struct {
@@ -31,6 +32,7 @@ type UserInfoResp struct {
 	Username    string `json:"username"`
 	Status      int    `json:"status"`
 	Avatar      string `json:"avatar"`
+	CoverImage  string `json:"cover_image"`
 	Balance     int64  `json:"balance"`
 	Phone       string `json:"phone"`
 	IsAdmin     bool   `json:"is_admin"`
