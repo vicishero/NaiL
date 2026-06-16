@@ -23,37 +23,70 @@ func (s *noticeSrv) CreateNotice(notice *dbr.Notice) (*dbr.Notice, error) {
 }
 
 func (s *noticeSrv) GetNotices(userId int64, offset, limit int) (res []*dbr.NoticeFormated, total int64, err error) {
-	var notices []*dbr.Notice
-	// Count — 当前用户或全员广播
-	where := "(receiver_user_id=? OR receiver_user_id=0) AND is_del=0"
-	countDB := s.db.Table(_notice_).Where(where, userId)
-	if err = countDB.Count(&total).Error; err != nil || total == 0 {
+	where := "(n.receiver_user_id=? OR n.receiver_user_id=0) AND n.is_del=0"
+
+	// Count
+	if err = s.db.Table(_notice_+" n").Where(where, userId).Count(&total).Error; err != nil || total == 0 {
 		return
 	}
-	// Find — independent chain
-	findDB := s.db.Table(_notice_).Where(where, userId)
+
+	// Find with LEFT JOIN p_notice_read to determine is_read
+	type noticeWithRead struct {
+		dbr.Notice
+		ReadID *int64 `gorm:"column:read_id"`
+	}
+	var rows []noticeWithRead
+	db := s.db.Table(_notice_+" n").
+		Select("n.*, nr.id AS read_id").
+		Joins("LEFT JOIN p_notice_read nr ON n.id = nr.msg_id AND nr.user_id = ?", userId).
+		Where(where, userId)
 	if offset >= 0 && limit > 0 {
-		findDB = findDB.Offset(offset).Limit(limit)
+		db = db.Offset(offset).Limit(limit)
 	}
-	if err = findDB.Order("id DESC").Find(&notices).Error; err != nil {
+	if err = db.Order("n.id DESC").Find(&rows).Error; err != nil {
 		return
 	}
-	for _, n := range notices {
-		res = append(res, n.Format())
+
+	for _, row := range rows {
+		f := row.Notice.Format()
+		if f != nil {
+			// 有 read_id = 已读，无 = 未读
+			if row.ReadID != nil {
+				f.IsRead = 1
+			} else {
+				f.IsRead = 0
+			}
+			res = append(res, f)
+		}
 	}
 	return
 }
 
 func (s *noticeSrv) GetUnreadNoticeCount(userId int64) (int64, error) {
-	return (&dbr.Notice{}).CountUnread(s.db, userId)
+	var count int64
+	err := s.db.Table(_notice_+" n").
+		Joins("LEFT JOIN p_notice_read nr ON n.id = nr.msg_id AND nr.user_id = ?", userId).
+		Where("(n.receiver_user_id=? OR n.receiver_user_id=0) AND n.is_del=0 AND nr.id IS NULL", userId).
+		Count(&count).Error
+	return count, err
 }
 
-func (s *noticeSrv) ReadNotice(noticeId int64) error {
-	return s.db.Table(_notice_).Where("id=?", noticeId).Update("is_read", 1).Error
+func (s *noticeSrv) ReadNotice(noticeId int64, userId int64) error {
+	return s.db.Exec(
+		"INSERT IGNORE INTO p_notice_read (msg_id, user_id, read_time) VALUES (?, ?, NOW())",
+		noticeId, userId,
+	).Error
 }
 
 func (s *noticeSrv) ReadAllNotice(userId int64) error {
-	return (&dbr.Notice{}).ReadAll(s.db, userId)
+	return s.db.Exec(
+		`INSERT IGNORE INTO p_notice_read (msg_id, user_id, read_time)
+		 SELECT n.id, ?, NOW()
+		 FROM p_notice n
+		 LEFT JOIN p_notice_read nr ON n.id = nr.msg_id AND nr.user_id = ?
+		 WHERE (n.receiver_user_id=? OR n.receiver_user_id=0) AND n.is_del=0 AND nr.id IS NULL`,
+		userId, userId, userId,
+	).Error
 }
 
 func (s *noticeSrv) DeleteNotice(id int64) error {

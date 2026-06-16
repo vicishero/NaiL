@@ -139,6 +139,9 @@ type AdminService interface {
 	// GetServerInfo 获取服务器信息
 	GetServerInfo(ctx context.Context) (*GetServerInfoResp, error)
 
+	// ReloadSystem 重载系统配置
+	ReloadSystem(ctx context.Context) error
+
 	// UploadFile 上传文件
 	UploadFile(ctx context.Context, file interface{}, filename string) (*UploadFileResp, error)
 

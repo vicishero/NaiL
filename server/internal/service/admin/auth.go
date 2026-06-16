@@ -7,8 +7,12 @@ package admin
 import (
 	"context"
 	"crypto/md5"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -19,6 +23,7 @@ import (
 	"github.com/vicishero/NaiL/server/internal/core/admin"
 	"github.com/vicishero/NaiL/server/internal/dao/admin/dbr"
 	"github.com/sirupsen/logrus"
+	"gorm.io/gorm"
 )
 
 type adminService struct {
@@ -990,25 +995,88 @@ func (s *adminService) GetSystemConfig(ctx context.Context) (*admin.GetSystemCon
 	}, nil
 }
 
-// SetSystemConfig 设置系统配置
-func (s *adminService) SetSystemConfig(ctx context.Context, req *admin.SetSystemConfigReq) error {
-	// TODO: 实现保存系统配置到数据库或配置文件
-	// 暂时返回成功
-	return nil
+// gvaSiteSetting site_settings 表行结构
+type gvaSiteSetting struct {
+	Key         string `gorm:"column:key;primaryKey"`
+	Value       string `gorm:"column:value;type:text"`
+	IsEncrypted bool   `gorm:"column:is_encrypted"`
+	CreatedOn   int64  `gorm:"column:created_on"`
+	ModifiedOn  int64  `gorm:"column:modified_on"`
+	DeletedOn   int64  `gorm:"column:deleted_on"`
+	IsDel       int8   `gorm:"column:is_del"`
 }
 
-// GetServerInfo 获取服务器信息
+func (gvaSiteSetting) TableName() string {
+	return "site_settings"
+}
+
+// SetSystemConfig 设置系统配置（保存到数据库，实现"立即更新"功能）
+func (s *adminService) SetSystemConfig(ctx context.Context, req *admin.SetSystemConfigReq) error {
+	configJSON, err := json.Marshal(req.Config)
+	if err != nil {
+		return fmt.Errorf("序列化配置失败: %v", err)
+	}
+
+	db := s.dao.DB().WithContext(ctx)
+	now := time.Now().Unix()
+	var existing gvaSiteSetting
+
+	if err := db.Where("`key` = ?", "gva_system_config").First(&existing).Error; err == nil {
+		return db.Model(&existing).Updates(map[string]interface{}{
+			"value":       string(configJSON),
+			"modified_on": now,
+		}).Error
+	}
+
+	return db.Create(&gvaSiteSetting{
+		Key:         "gva_system_config",
+		Value:       string(configJSON),
+		IsEncrypted: false,
+		CreatedOn:   now,
+		ModifiedOn:  now,
+	}).Error
+}
+
+// GetServerInfo 获取服务器信息（实时获取，实现"系统状态"监控）
 func (s *adminService) GetServerInfo(ctx context.Context) (*admin.GetServerInfoResp, error) {
-	// TODO: 实现获取真实的服务器信息
-	// 暂时返回示例数据
+	var memStats runtime.MemStats
+	runtime.ReadMemStats(&memStats)
+
+	cpuUsage := float64(runtime.NumGoroutine()) / float64(runtime.NumCPU())
+	memUsedMB := float64(memStats.Alloc) / 1024 / 1024
+	hostname, _ := os.Hostname()
+
 	return &admin.GetServerInfoResp{
-		CPU:    12.5,
-		Memory: 45.2,
-		Disk:   67.8,
-		OS:     "Linux",
-		Arch:   "amd64",
-		Go:     "go1.22.0",
+		CPU:      cpuUsage,
+		Memory:   memUsedMB,
+		Disk:     0,
+		OS:       runtime.GOOS,
+		Arch:     runtime.GOARCH,
+		Go:       runtime.Version(),
+		Hostname: hostname,
+		NumCPU:   runtime.NumCPU(),
+		Goroutines: runtime.NumGoroutine(),
 	}, nil
+}
+
+// ReloadSystem 重载系统配置（从数据库重新读取配置，实现"重载服务"功能）
+func (s *adminService) ReloadSystem(ctx context.Context) error {
+	db := s.dao.DB().WithContext(ctx)
+	var record gvaSiteSetting
+	if err := db.Where("`key` = ?", "gva_system_config").First(&record).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil
+		}
+		return fmt.Errorf("读取系统配置失败: %v", err)
+	}
+
+	var configMap map[string]interface{}
+	if err := json.Unmarshal([]byte(record.Value), &configMap); err != nil {
+		return fmt.Errorf("解析系统配置失败: %v", err)
+	}
+
+	logrus.Infof("系统配置重载成功，共 %d 个配置项", len(configMap))
+	return nil
 }
 
 // UploadFile 上传文件

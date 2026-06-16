@@ -27,7 +27,21 @@ func (s *messageSrv) CreateMessage(msg *ms.Message) (*ms.Message, error) {
 }
 
 func (s *messageSrv) GetUnreadCount(userID int64) (int64, error) {
-	return (&dbr.Message{}).CountUnread(s.db, userID)
+	// p_message 未读
+	msgCount, err := (&dbr.Message{}).CountUnread(s.db, userID)
+	if err != nil {
+		return 0, err
+	}
+	// p_notice 未读（通过 p_notice_read 判断）
+	var noticeCount int64
+	err = s.db.Table("p_notice n").
+		Joins("LEFT JOIN p_notice_read nr ON n.id = nr.msg_id AND nr.user_id = ?", userID).
+		Where("(n.receiver_user_id=? OR n.receiver_user_id=0) AND n.is_del=0 AND nr.id IS NULL", userID).
+		Count(&noticeCount).Error
+	if err != nil {
+		return msgCount, nil // 容错：notice 查询失败时只返回 message 未读数
+	}
+	return msgCount + noticeCount, nil
 }
 
 func (s *messageSrv) GetMessageByID(id int64) (*ms.Message, error) {

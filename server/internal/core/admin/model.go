@@ -323,12 +323,15 @@ type SetSystemConfigReq struct {
 
 // GetServerInfoResp 获取服务器信息响应
 type GetServerInfoResp struct {
-	CPU    float64 `json:"cpu"`    // CPU使用率
-	Memory float64 `json:"memory"` // 内存使用率
-	Disk   float64 `json:"disk"`   // 磁盘使用率
-	OS     string  `json:"os"`     // 操作系统
-	Arch   string  `json:"arch"`   // 系统架构
-	Go     string  `json:"go"`     // Go版本
+	CPU        float64 `json:"cpu"`        // CPU使用率
+	Memory     float64 `json:"memory"`     // 内存使用(MB)
+	Disk       float64 `json:"disk"`       // 磁盘使用率
+	OS         string  `json:"os"`         // 操作系统
+	Arch       string  `json:"arch"`       // 系统架构
+	Go         string  `json:"go"`         // Go版本
+	Hostname   string  `json:"hostname"`   // 主机名
+	NumCPU     int     `json:"numCPU"`     // CPU核心数
+	Goroutines int     `json:"goroutines"` // Goroutine数量
 }
 
 // UploadFileResp 上传文件响应

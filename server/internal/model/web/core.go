@@ -54,7 +54,8 @@ type GetMessagesResp struct {
 
 type ReadMessageReq struct {
 	SimpleInfo `json:"-" binding:"-"`
-	ID         int64 `json:"id,string" binding:"required"`
+	ID         int64  `json:"id,string" binding:"required"`
+	Type       int8   `json:"type"` // 消息类型: 99=系统通知(system notice), 其他=普通消息
 }
 
 type ReadAllMessageReq struct {

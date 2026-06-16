@@ -92,6 +92,7 @@ func (s *coreSrv) GetMessages(req *web.GetMessagesReq) (res *web.GetMessagesResp
 				ID: n.ID, SenderUserID: n.SenderUserID, ReceiverUserID: n.ReceiverUserID,
 				SenderUser: &dbr.UserFormated{ID: n.SenderUserID},
 				ReceiverUser: &dbr.UserFormated{ID: n.ReceiverUserID},
+					Type: 99,
 				Brief: n.Brief, Content: n.Content, IsRead: n.IsRead, CreatedOn: n.CreatedOn,
 			}
 		}
@@ -164,28 +165,45 @@ func (s *coreSrv) GetMessages(req *web.GetMessagesReq) (res *web.GetMessagesResp
 }
 
 func (s *coreSrv) ReadMessage(req *web.ReadMessageReq) error {
-	message, err := s.Ds.GetMessageByID(req.ID)
-	if err != nil {
-		return web.ErrReadMessageFailed
+	if req.Uid <= 0 {
+		return xerror.NewError(40100, "用户未登录或Token无效")
 	}
-	if message.ReceiverUserID != req.Uid {
-		return web.ErrNoPermission
+
+	if req.Type == 99 {
+		// 系统通知 → 写入 p_notice_read
+		if err := s.Ds.ReadNotice(req.ID, req.Uid); err != nil {
+			logrus.Errorf("Ds.ReadNotice msgId:%d uid:%d err:%s", req.ID, req.Uid, err)
+			return xerror.NewError(50002, "标记消息已读失败: "+err.Error())
+		}
+	} else {
+		// 普通消息 → 标记 p_message.is_read
+		message, err := s.Ds.GetMessageByID(req.ID)
+		if err != nil {
+			logrus.Errorf("Ds.GetMessageByID id:%d err:%s", req.ID, err)
+			return xerror.NewError(50002, "消息不存在: "+err.Error())
+		}
+		if message.ReceiverUserID != req.Uid && message.SenderUserID != req.Uid {
+			return web.ErrNoPermission
+		}
+		if err = s.Ds.ReadMessage(message); err != nil {
+			logrus.Errorf("Ds.ReadMessage err: %s", err)
+			return xerror.NewError(50002, "标记消息已读失败: "+err.Error())
+		}
 	}
-	if err = s.Ds.ReadMessage(message); err != nil {
-		logrus.Errorf("Ds.ReadMessage err: %s", err)
-		return web.ErrReadMessageFailed
-	}
-	// 缓存处理
 	onMessageActionEvent(_messageActionRead, req.Uid)
 	return nil
 }
 
 func (s *coreSrv) ReadAllMessage(req *web.ReadAllMessageReq) error {
+	// 标记普通 message 已读
 	if err := s.Ds.ReadAllMessage(req.Uid); err != nil {
 		logrus.Errorf("coreSrv.Ds.ReadAllMessage err: %s", err)
 		return web.ErrReadMessageFailed
 	}
-	// 缓存处理
+	// 同时标记 notice 已读
+	if err := s.Ds.ReadAllNotice(req.Uid); err != nil {
+		logrus.Errorf("coreSrv.Ds.ReadAllNotice err: %s", err)
+	}
 	onMessageActionEvent(_messageActionRead, req.Uid)
 	return nil
 }

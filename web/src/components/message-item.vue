@@ -313,6 +313,7 @@ const handleReadMessage = (message: Item.MessageProps) => {
   if (message.is_read == 0) {
     Api.v1.user.message.post.read({
       id: message.id,
+	      type: message.type,
     })
       .then((_res) => {
         message.is_read = 1;

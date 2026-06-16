@@ -11,7 +11,7 @@ type NoticeService interface {
 	CreateNotice(notice *dbr.Notice) (*dbr.Notice, error)
 	GetNotices(userId int64, offset, limit int) ([]*dbr.NoticeFormated, int64, error)
 	GetUnreadNoticeCount(userId int64) (int64, error)
-	ReadNotice(noticeId int64) error
+	ReadNotice(noticeId int64, userId int64) error
 	ReadAllNotice(userId int64) error
 	DeleteNotice(id int64) error
 }

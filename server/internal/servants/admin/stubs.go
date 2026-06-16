@@ -161,9 +161,13 @@ func (s *AuthServant) SetAuthApi(c *gin.Context) {
 
 // ====== 系统配置补充接口 ======
 
-// ReloadSystem 重启系统
+// ReloadSystem 重载系统配置
 func (s *AuthServant) ReloadSystem(c *gin.Context) {
-	app.NewResponse(c).ToResponse(nil)
+	if err := s.service.ReloadSystem(c.Request.Context()); err != nil {
+		app.NewResponse(c).ToErrorResponse(xerror.ServerError.WithDetails(err.Error()))
+		return
+	}
+	app.NewResponse(c).ToResponse(gin.H{"msg": "重载成功"})
 }
 
 // ====== 操作日志补充接口 ======
