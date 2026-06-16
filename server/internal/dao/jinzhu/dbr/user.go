@@ -26,6 +26,7 @@ type User struct {
 	Balance  int64  `json:"balance"`
 	IsAdmin  bool   `json:"is_admin"`
 	IsKOL    bool   `json:"is_kol"`
+	ChatEnabled  bool   `json:"chat_enabled"`
 	Address  string `json:"address" gorm:"size:42;index:idx_address"` // 钱包地址
 }
 
@@ -37,6 +38,7 @@ type UserFormated struct {
 	Avatar      string `json:"avatar"`
 	IsAdmin     bool   `json:"is_admin"`
 	IsKOL       bool   `json:"is_kol"`
+	ChatEnabled  bool   `json:"chat_enabled"`
 	IsFriend    bool   `json:"is_friend"`
 	IsFollowing bool   `json:"is_following"`
 }

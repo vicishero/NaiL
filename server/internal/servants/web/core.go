@@ -63,6 +63,7 @@ func (s *coreSrv) GetUserInfo(req *web.UserInfoReq) (*web.UserInfoResp, error) {
 		Balance:     user.Balance,
 		IsAdmin:     user.IsAdmin,
 		IsKOL:       user.IsKOL,
+		ChatEnabled: user.ChatEnabled,
 		Address:     user.Address,
 		CreatedOn:   user.CreatedOn,
 		Follows:     follows,

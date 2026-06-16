@@ -100,7 +100,7 @@ RateLimit:
 Meili:
   Host: 127.0.0.1:7700
   Index: paopao-data
-  ApiKey: paopao-meilisearch
+  ApiKey: admin
   Secure: false
 
 LocalOSS:

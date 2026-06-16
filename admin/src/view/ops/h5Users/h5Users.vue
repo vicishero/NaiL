@@ -77,6 +77,11 @@
             <el-switch v-model="scope.row.isKOL" @change="(val) => updateField(scope.row, 'isKOL', val)" />
           </template>
         </el-table-column>
+        <el-table-column align="center" label="聊天" width="80">
+          <template #default="scope">
+            <el-switch v-model="scope.row.chatEnabled" @change="(val) => updateField(scope.row, 'chatEnabled', val)" />
+          </template>
+        </el-table-column>
         <el-table-column align="left" label="注册时间" min-width="170" prop="CreatedAt">
           <template #default="scope">{{ formatDate(scope.row.CreatedAt) }}</template>
         </el-table-column>
@@ -158,6 +163,12 @@
         <el-form-item label="妆风格">
           <el-input v-model="kolForm.makeupStyle" />
         </el-form-item>
+        <el-form-item label="系统提示词">
+          <el-input v-model="kolForm.systemPrompt" type="textarea" :rows="6" placeholder="AI 对话的系统提示词..." />
+        </el-form-item>
+        <el-form-item label="API私钥">
+          <el-input v-model="kolForm.apiKey" placeholder="Dify API Key" maxlength="64" show-word-limit />
+        </el-form-item>
       </el-form>
     </el-drawer>
   </div>
@@ -187,6 +198,8 @@ const kolForm = reactive({
   skinTone: '冷白病态肌', eyeColor: '酒红', orientation: '偏双性恋（情感依赖向）',
   preferences: '独占欲、暗调氛围、偏执温柔', favoriteFoods: '黑森林、红酒、冷食',
   clothingStyle: '黑裙、蕾丝、丝带、哥特风', makeupStyle: '苍白底妆、下垂眼、暗红眼影、冷唇',
+  systemPrompt: '',
+  apiKey: "",
   categoryId: 0
 })
 
@@ -217,6 +230,7 @@ const updateField = async (row, field, val) => {
   if (field === 'status') payload.status = val
   else if (field === 'isAdmin') payload.isAdmin = val
   else if (field === 'isKOL') payload.isKOL = val
+  else if (field === 'chatEnabled') payload.chatEnabled = val
   const res = await updateH5User(payload)
   if (res.code === 0) {
     ElMessage.success('更新成功')
@@ -246,6 +260,8 @@ const viewKol = async (row) => {
     skinTone: '冷白病态肌', eyeColor: '酒红', orientation: '偏双性恋（情感依赖向）',
     preferences: '独占欲、暗调氛围、偏执温柔', favoriteFoods: '黑森林、红酒、冷食',
     clothingStyle: '黑裙、蕾丝、丝带、哥特风', makeupStyle: '苍白底妆、下垂眼、暗红眼影、冷唇',
+  systemPrompt: '',
+  apiKey: "",
     categoryId: 0
   })
   try {

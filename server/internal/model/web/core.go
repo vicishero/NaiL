@@ -35,6 +35,7 @@ type UserInfoResp struct {
 	Phone       string `json:"phone"`
 	IsAdmin     bool   `json:"is_admin"`
 	IsKOL       bool   `json:"is_kol"`
+	ChatEnabled bool   `json:"chat_enabled"`
 	Address     string `json:"address"`
 	CreatedOn   int64  `json:"created_on"`
 	Follows     int64  `json:"follows"`

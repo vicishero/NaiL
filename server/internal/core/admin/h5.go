@@ -32,6 +32,7 @@ type H5UserItem struct {
 	Status         int    `json:"status"`
 	IsAdmin        bool   `json:"isAdmin"`
 	IsKOL          bool   `json:"isKOL"`
+	ChatEnabled    bool   `json:"chatEnabled"`
 	CreatedAt      string `json:"CreatedAt"`
 	FollowingCount int64  `json:"followingCount"`
 	FollowerCount  int64  `json:"followerCount"`
@@ -48,8 +49,9 @@ type H5UserUpdateReq struct {
 	Nickname string `json:"nickname"`
 	Bio      string `json:"bio"`
 	Status   *int   `json:"status"`
-	IsAdmin  *bool  `json:"isAdmin"`
-	IsKOL    *bool  `json:"isKOL"`
+	IsAdmin      *bool  `json:"isAdmin"`
+	IsKOL        *bool  `json:"isKOL"`
+	ChatEnabled  *bool  `json:"chatEnabled"`
 }
 
 // H5UserDeleteReq 删除运维用户
@@ -173,6 +175,8 @@ type H5KolProfileItem struct {
 	ClothingStyle string `json:"clothingStyle"`
 	MakeupStyle   string `json:"makeupStyle"`
 	CategoryID    int64  `json:"categoryId,string"`
+	SystemPrompt  string `json:"systemPrompt"`
+	ApiKey        string `json:"apiKey"`
 }
 
 // H5KolProfileGetReq 获取KOL属性请求
@@ -194,6 +198,8 @@ type H5KolProfileSaveReq struct {
 	ClothingStyle string `json:"clothingStyle"`
 	MakeupStyle   string `json:"makeupStyle"`
 	CategoryID    int64  `json:"categoryId,string"`
+	SystemPrompt  string `json:"systemPrompt"`
+	ApiKey        string `json:"apiKey"`
 }
 
 // H5KolCategoryItem KOL分类

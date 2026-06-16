@@ -138,18 +138,17 @@ interface ChatConv {
 }
 
 const chatList = ref<ChatConv[]>([
-    { id: 1, name: '张经理', avatar: '', lastMsg: '好的，明天会议上讨论这个方案', time: '10:32', unread: 2 },
-    { id: 2, name: '李总监', avatar: '', lastMsg: '文件已经发你邮箱了，请查收', time: '09:15', unread: 0 },
-    { id: 3, name: '王主管', avatar: '', lastMsg: '收到，我马上安排', time: '昨天', unread: 1 },
-    { id: 4, name: '赵工程师', avatar: '', lastMsg: '这个bug已经修好了，你测试一下', time: '昨天', unread: 0 },
-    { id: 5, name: '钱设计师', avatar: '', lastMsg: '新版的UI稿你看一下，有问题随时沟通', time: '周三', unread: 0 },
-    { id: 6, name: '孙分析师', avatar: '', lastMsg: '数据报告已经完成，下午汇报', time: '周三', unread: 3 },
-    { id: 7, name: '周秘书', avatar: '', lastMsg: '明天的会议改到下午3点', time: '周一', unread: 0 },
+    { id: 0, name: 'Dify 智能助手', avatar: '', lastMsg: '有什么可以帮你的？', time: '', unread: 0 },
 ]);
 
-function openChat(_conv: ChatConv) {
-    router.push({ name: 'chat' });
+function openChat(conv: ChatConv) {
+    if (conv.id === 0) {
+        router.push({ name: 'chat', query: { nickname: 'Dify 智能助手' } })
+    } else {
+        router.push({ name: 'chat', query: { kol_user_id: conv.id, nickname: conv.name, avatar: conv.avatar } })
+    }
 }
+
 
 // === 私信 (whisper + requesting) ===
 const list = ref<Item.MessageProps[]>([]);

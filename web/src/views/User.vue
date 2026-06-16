@@ -91,7 +91,7 @@
 
                 <!-- 操作按钮 -->
                 <div class="user-actions" v-if="userInfo.id > 0 && userInfo.username !== user.username">
-                    <n-button class="action-btn" round @click="goChat">
+                    <n-button v-if="user.chat_enabled" class="action-btn" round @click="goChat">
                         <template #icon><n-icon><chatbubble-outline /></n-icon></template>
                         私聊
                     </n-button>
@@ -179,7 +179,7 @@ import {
   CopyOutline,
 } from '@vicons/ionicons5';
 import InfiniteLoading from 'v3-infinite-loading';
-import { useStoreUser } from '@/store/user';
+import { useStoreUser, TOKEN_KEY } from '@/store/user';
 import { useStoreProfile } from '@/store/profile';
 import { storeToRefs } from 'pinia';
 import { Api } from '@/utils/request';
@@ -544,8 +544,28 @@ const openDeleteFriend = () => {
     },
   });
 };
-const goChat = () => {
-    router.push({ name: 'messages', query: { tab: 'chat' } });
+const goChat = async () => {
+    const token = localStorage.getItem(TOKEN_KEY)
+    try {
+        const res = await fetch(import.meta.env.VITE_HOST + '/v1/chat/conversation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+            body: JSON.stringify({ kol_user_id: user.id }),
+        })
+        const data = await res.json()
+        if (data.code === 0) {
+            router.push({
+                name: 'chat',
+                query: {
+                    kol_user_id: user.id,
+                    nickname: user.nickname,
+                    avatar: user.avatar || '',
+                },
+            })
+            return
+        }
+    } catch { /* fallthrough */ }
+    window.$message?.error('创建会话失败')
 };
 
 const handleFollow = () => {

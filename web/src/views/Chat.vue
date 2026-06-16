@@ -9,7 +9,10 @@
             <div class="bubble-meta">{{ shortenAddr(walletAddr) }}</div>
           </template>
           <template v-else>
-            <div class="ai-label">🤖 AI</div>
+            <div class="ai-label">
+              <n-avatar v-if="kolAvatar" :src="kolAvatar" :size="18" round />
+              <span>{{ kolNickname || '🤖 AI' }}</span>
+            </div>
             <div class="bubble-content" v-html="renderContent(msg.content)" />
             <div v-if="msg.streaming" class="typing-dot"><span>.</span><span>.</span><span>.</span></div>
           </template>
@@ -34,12 +37,14 @@
 
 <script setup lang="ts">
 import { ref, nextTick, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useStoreUser } from '@/store/user'
 import { storeToRefs } from 'pinia'
 import { TOKEN_KEY } from '@/store/user'
 import { getLoggedInWalletAddress } from '@/utils/web3'
 import { ImageOutline, AttachOutline, SendOutline } from '@vicons/ionicons5'
 
+const route = useRoute()
 const storeUser = useStoreUser()
 const { userInfo } = storeToRefs(storeUser)
 const messagesRef = ref<HTMLElement>()
@@ -47,11 +52,16 @@ const messages = ref<ChatMessage[]>([])
 const inputText = ref('')
 const loading = ref(false)
 const walletAddr = ref('')
+const conversationId = ref('')
+const kolUserId = ref(Number(route.query.kol_user_id) || 0)
+const kolNickname = ref((route.query.nickname as string) || '')
+const kolAvatar = ref((route.query.avatar as string) || '')
 interface ChatMessage { role: 'user' | 'assistant'; content: string; streaming?: boolean }
 
 const uploadUrl = import.meta.env.VITE_HOST + '/v1/attachment'
 const uploadHeaders = { Authorization: 'Bearer ' + localStorage.getItem(TOKEN_KEY) }
 const DIFY_API = import.meta.env.VITE_HOST + '/v1/chat/dify'
+const HISTORY_API = import.meta.env.VITE_HOST + '/v1/chat/history'
 
 const shortenAddr = (addr: string) => addr && addr.length > 10 ? addr.slice(0, 6) + '...' + addr.slice(-4) : addr
 
@@ -108,7 +118,7 @@ const sendMessage = async () => {
     const token = localStorage.getItem(TOKEN_KEY)
     const resp = await fetch(DIFY_API, {
       method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-      body: JSON.stringify({ query: text, user: userInfo.value.id || 'anonymous', conversation_id: '' }),
+      body: JSON.stringify({ query: text, user: userInfo.value.id || 'anonymous', kol_user_id: kolUserId.value }),
     })
     if (!resp.ok) throw new Error('请求失败: ' + resp.status)
     const reader = resp.body?.getReader(); if (!reader) throw new Error('不支持')
@@ -130,7 +140,31 @@ const sendMessage = async () => {
 }
 
 const scrollToBottom = () => nextTick(() => { const el = messagesRef.value; if (el) el.scrollTop = el.scrollHeight })
-onMounted(() => { walletAddr.value = getLoggedInWalletAddress() || '' })
+onMounted(async () => {
+  walletAddr.value = getLoggedInWalletAddress() || ''
+  // 加载历史消息
+  if (kolUserId.value > 0 || true) {
+    try {
+      const token = localStorage.getItem(TOKEN_KEY)
+      const res = await fetch(HISTORY_API + '?kol_user_id=' + kolUserId.value, {
+        headers: { 'Authorization': 'Bearer ' + token },
+      })
+      const data = await res.json()
+      if (data.code === 0 && data.data) {
+        conversationId.value = data.data.dify_conversation_id || ''
+        const history = data.data.messages || []
+        // Dify 每条记录含 query(用户)+answer(AI)，展开为两条消息
+        const formatted: ChatMessage[] = []
+        for (const m of history) {
+          if (m.query) formatted.push({ role: 'user', content: m.query })
+          if (m.answer) formatted.push({ role: 'assistant', content: m.answer })
+        }
+        messages.value = formatted
+        scrollToBottom()
+      }
+    } catch { /* ignore */ }
+  }
+})
 </script>
 
 <style lang="less" scoped>

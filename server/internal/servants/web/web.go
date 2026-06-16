@@ -15,6 +15,7 @@ import (
 	"github.com/vicishero/NaiL/server/internal/dao"
 	"github.com/vicishero/NaiL/server/internal/dao/cache"
 	"github.com/vicishero/NaiL/server/internal/servants/base"
+	"github.com/vicishero/NaiL/server/internal/servants/chain"
 	"github.com/vicishero/NaiL/server/internal/sitesetting"
 )
 
@@ -48,7 +49,12 @@ func RouteWeb(e *gin.Engine) {
 		// Dify AI 
 		{
 			cs := newCoreSrv(ds, _oss, _wc)
-			e.Group("/v1").POST("/chat/dify", cs.(*coreSrv).ChatWithDify)
+		chain := gin.HandlersChain{chain.JwtLoose()}
+			chat := e.Group("/v1/chat")
+		chat.Use(chain...)
+		chat.POST("/dify", cs.(*coreSrv).ChatWithDify)
+		chat.POST("/conversation", cs.(*coreSrv).GetOrCreateConversation)
+		chat.GET("/history", cs.(*coreSrv).GetChatHistory)
 		}
 	// regster servants if needed by configure
 	cfg.Be("Alipay", func() {

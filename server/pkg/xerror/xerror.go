@@ -95,9 +95,12 @@ func HttpStatusCode(e error) (statusCode int, code int) {
 		code == UnauthorizedTokenGenerate.StatusCode(),
 		code == UnauthorizedTokenTimeout.StatusCode():
 		statusCode = http.StatusUnauthorized
-	case code >= 10009 && code < 10100, code >= 20000:
+	case code >= 10009 && code < 10100, code >= 20000 && code < 30000:
 		// Forbidden(10009) 及自定义权限错误码(2xxxx) → 403
 		statusCode = http.StatusForbidden
+	case code >= 30000:
+		// 业务错误(3xxxx+) → 500
+		statusCode = http.StatusInternalServerError
 	case code == TooManyRequests.StatusCode():
 		statusCode = http.StatusTooManyRequests
 	}

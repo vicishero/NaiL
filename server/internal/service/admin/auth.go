@@ -1158,6 +1158,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 		Status    int    `gorm:"column:status"`
 		IsAdmin   bool   `gorm:"column:is_admin"`
 		IsKOL     bool   `gorm:"column:is_kol"`
+		ChatEnabled bool   `gorm:"column:chat_enabled"`
 		CreatedOn int64  `gorm:"column:created_on"`
 		Address   string `gorm:"column:address"`
 	}
@@ -1224,6 +1225,7 @@ func (s *adminService) GetH5UserList(ctx context.Context, req *admin.H5UserListR
 			Status:        r.Status,
 			IsAdmin:       r.IsAdmin,
 			IsKOL:         r.IsKOL,
+				ChatEnabled:    r.ChatEnabled,
 			CreatedAt:     time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
 		}
 	}
@@ -1242,6 +1244,7 @@ func (s *adminService) GetH5User(ctx context.Context, userID int64) (*admin.H5Us
 		Status    int    `gorm:"column:status"`
 		IsAdmin   bool   `gorm:"column:is_admin"`
 		IsKOL     bool   `gorm:"column:is_kol"`
+		ChatEnabled bool   `gorm:"column:chat_enabled"`
 		CreatedOn int64  `gorm:"column:created_on"`
 		Address   string `gorm:"column:address"`
 	}
@@ -1275,10 +1278,23 @@ func (s *adminService) UpdateH5User(ctx context.Context, req *admin.H5UserUpdate
 	if req.IsAdmin != nil {
 		updates["is_admin"] = *req.IsAdmin
 	}
-	if req.IsKOL != nil {
-		updates["is_kol"] = *req.IsKOL
-	}
-	return s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ? AND is_del = 0", req.ID).Updates(updates).Error
+		if req.IsKOL != nil {
+			updates["is_kol"] = *req.IsKOL
+		}
+		if req.ChatEnabled != nil {
+			isKOL := *req.ChatEnabled
+			if isKOL {
+				var user struct{ IsKOL bool `gorm:"column:is_kol"` }
+				if err := s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ? AND is_del = 0", req.ID).First(&user).Error; err != nil {
+					return err
+				}
+				if !user.IsKOL && (req.IsKOL == nil || !*req.IsKOL) {
+					return fmt.Errorf("只有 KOL 用户才能启用聊天功能")
+				}
+			}
+			updates["chat_enabled"] = *req.ChatEnabled
+		}
+		return s.dao.DB().WithContext(ctx).Table("p_user").Where("id = ? AND is_del = 0", req.ID).Updates(updates).Error
 }
 
 // DeleteH5User 删除运维用户(软删除)
@@ -1699,6 +1715,8 @@ func (s *adminService) GetKolProfile(ctx context.Context, userID int64) (*admin.
 		ClothingStyle string `gorm:"column:clothing_style"`
 		MakeupStyle   string `gorm:"column:makeup_style"`
 		CategoryID    int64  `gorm:"column:category_id"`
+		SystemPrompt  string `gorm:"column:system_prompt"`
+		ApiKey        string `gorm:"column:api_key"`
 	}
 	var row pKolProfile
 	err := s.dao.DB().WithContext(ctx).Table("p_kol_profile").Where("user_id = ? AND is_del = 0", userID).First(&row).Error
@@ -1718,6 +1736,8 @@ func (s *adminService) GetKolProfile(ctx context.Context, userID int64) (*admin.
 		ClothingStyle: row.ClothingStyle,
 		MakeupStyle:   row.MakeupStyle,
 		CategoryID:    row.CategoryID,
+			SystemPrompt:  row.SystemPrompt,
+			ApiKey:        row.ApiKey,
 	}, nil
 }
 
@@ -1742,6 +1762,8 @@ func (s *adminService) SaveKolProfile(ctx context.Context, req *admin.H5KolProfi
 		"clothing_style": req.ClothingStyle,
 		"makeup_style":   req.MakeupStyle,
 		"category_id":    req.CategoryID,
+		"system_prompt":  req.SystemPrompt,
+		"api_key":       req.ApiKey,
 	}
 	if err != nil {
 		// 不存在则创建
@@ -1805,6 +1827,8 @@ func (s *adminService) GetKolManageList(ctx context.Context, req *admin.H5KolMan
 		Avatar       string `gorm:"column:avatar"`
 		CreatedOn    int64  `gorm:"column:created_on"`
 		CategoryID   int64  `gorm:"column:category_id"`
+		SystemPrompt  string `gorm:"column:system_prompt"`
+		ApiKey        string `gorm:"column:api_key"`
 		Height       string `gorm:"column:height"`
 		Weight       string `gorm:"column:weight"`
 		Measurements string `gorm:"column:measurements"`
