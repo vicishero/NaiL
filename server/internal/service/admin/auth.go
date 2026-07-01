@@ -1720,6 +1720,7 @@ func (s *adminService) GetKolProfile(ctx context.Context, userID int64) (*admin.
 		ClothingStyle string `gorm:"column:clothing_style"`
 		MakeupStyle   string `gorm:"column:makeup_style"`
 		CategoryID    int64  `gorm:"column:category_id"`
+		Sort         int    `gorm:"column:sort"`
 		SystemPrompt  string `gorm:"column:system_prompt"`
 		ApiKey        string `gorm:"column:api_key"`
 	}
@@ -1743,6 +1744,7 @@ func (s *adminService) GetKolProfile(ctx context.Context, userID int64) (*admin.
 		CategoryID:    row.CategoryID,
 			SystemPrompt:  row.SystemPrompt,
 			ApiKey:        row.ApiKey,
+		Sort:          row.Sort,
 	}, nil
 }
 
@@ -1767,8 +1769,8 @@ func (s *adminService) SaveKolProfile(ctx context.Context, req *admin.H5KolProfi
 		"clothing_style": req.ClothingStyle,
 		"makeup_style":   req.MakeupStyle,
 		"category_id":    req.CategoryID,
+		"sort": req.Sort,
 		"system_prompt":  req.SystemPrompt,
-		"api_key":       req.ApiKey,
 	}
 	if err != nil {
 		// 不存在则创建
@@ -1833,6 +1835,7 @@ func (s *adminService) GetKolManageList(ctx context.Context, req *admin.H5KolMan
 		CoverImage string `gorm:"column:cover_image"`
 		CreatedOn    int64  `gorm:"column:created_on"`
 		CategoryID   int64  `gorm:"column:category_id"`
+		Sort         int    `gorm:"column:sort"`
 		SystemPrompt  string `gorm:"column:system_prompt"`
 		ApiKey        string `gorm:"column:api_key"`
 		Height       string `gorm:"column:height"`
@@ -1860,8 +1863,8 @@ func (s *adminService) GetKolManageList(ctx context.Context, req *admin.H5KolMan
 	offset := (req.Page - 1) * req.PageSize
 
 	var rows []pRow
-	if err := db.Select("u.id, u.nickname, u.username, u.avatar, u.address, u.created_on, COALESCE(p.category_id,0) AS category_id, COALESCE(p.height,'') AS height, COALESCE(p.weight,'') AS weight, COALESCE(p.measurements,'') AS measurements").
-		Order("u.id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
+	if err := db.Select("u.id, u.nickname, u.username, u.avatar, u.address, u.created_on, COALESCE(p.sort,0) AS sort, COALESCE(p.category_id,0) AS category_id, COALESCE(p.height,'') AS height, COALESCE(p.weight,'') AS weight, COALESCE(p.measurements,'') AS measurements").
+		Order("COALESCE(p.sort,0) DESC, u.id DESC").Offset(offset).Limit(req.PageSize).Find(&rows).Error; err != nil {
 		return 0, nil, err
 	}
 
@@ -1879,6 +1882,7 @@ func (s *adminService) GetKolManageList(ctx context.Context, req *admin.H5KolMan
 		items[i] = admin.H5KolManageItem{
 			ID: r.ID, Nickname: r.Nickname, Username: r.Username, Avatar: r.Avatar,
 			CategoryID: r.CategoryID, CategoryName: catNames[r.CategoryID],
+			Sort: r.Sort,
 			Height: r.Height, Weight: r.Weight, Measurements: r.Measurements,
 			WalletAddress: r.Address,
 			CreatedAt: time.Unix(r.CreatedOn, 0).Format("2006-01-02 15:04:05"),
@@ -1926,7 +1930,7 @@ func (s *adminService) GetExploreKolCategories(ctx context.Context) (*admin.Expl
 		var users []pUser
 		s.dao.DB().WithContext(ctx).Table("p_user u").
 			Joins("INNER JOIN p_kol_profile p ON u.id = p.user_id AND p.is_del = 0 AND p.category_id = ?", c.ID).
-			Where("u.is_del = 0 AND u.is_kol = 1").Limit(6).Find(&users)
+			Where("u.is_del = 0 AND u.is_kol = 1").Order("p.sort DESC").Limit(6).Find(&users)
 		eu := make([]admin.ExploreKolUser, len(users))
 		for i, u := range users {
 			eu[i] = admin.ExploreKolUser{ID: u.ID, Nickname: u.Nickname, Username: u.Username, Avatar: u.Avatar, CoverImage: u.CoverImage}

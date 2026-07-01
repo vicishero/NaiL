@@ -146,6 +146,9 @@
             <el-option v-for="c in kolCategoryList" :key="c.ID" :label="c.name" :value="c.ID" />
           </el-select>
         </el-form-item>
+        <el-form-item label="排序">
+          <el-input-number v-model="kolForm.sort" :min="0" :max="9999" />
+        </el-form-item>
         <el-form-item label="身高">
           <el-input v-model="kolForm.height" />
         </el-form-item>
@@ -214,6 +217,7 @@ const kolForm = reactive({
   systemPrompt: '',
   apiKey: "",
   categoryId: 0
+  sort: 0,
 })
 
 const getTableData = async () => {
@@ -276,6 +280,7 @@ const viewKol = async (row) => {
   systemPrompt: '',
   apiKey: "",
     categoryId: 0
+  sort: 0,
   })
   try {
     const res = await getKolProfile({ userId: row.ID })

@@ -36,6 +36,10 @@
 </template>
 
 <script setup lang="ts">
+// KeepAlive 需要组件 name 来匹配 include
+defineOptions({
+  name: 'chat',
+});
 import { ref, nextTick, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { useStoreUser } from '@/store/user'

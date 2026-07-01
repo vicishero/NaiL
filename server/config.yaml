@@ -11,7 +11,7 @@ App:
   RunMode: debug
 
 Features:
-  Default: ["Web", "Admin", "Meili", "LocalOSS", "MySQL", "Redis", "BigCacheIndex", "LoggerFile"]
+  Default: ["Web", "Admin", "Meili", "S3", "MySQL", "Redis", "BigCacheIndex", "LoggerFile"]
 
 WebServer:
   HttpIp: 0.0.0.0
@@ -103,11 +103,13 @@ Meili:
   ApiKey: admin
   Secure: false
 
-LocalOSS:
-  SavePath: custom/data/paopao-ce/oss
-  Secure: false
+S3:
+  AccessKey: "YOUR-AWS-ACCESS-KEY"
+  SecretKey: "YOUR-AWS-SECRET-KEY"
+  Secure: true
+  Endpoint: s3.amazonaws.com
   Bucket: paopao
-  Domain: 192.168.30.44:8008
+  Domain: ""
 
 Dify:
   URL: "https://api.dify.ai"

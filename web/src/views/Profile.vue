@@ -133,6 +133,10 @@
 </template>
 
 <script setup lang="ts">
+// KeepAlive 需要组件 name 来匹配 include
+defineOptions({
+  name: 'profile',
+});
 import { h, ref, Component, onMounted, computed, watch } from 'vue';
 import { NIcon } from 'naive-ui';
 import { useStoreMain } from '@/store/main';

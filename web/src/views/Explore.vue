@@ -63,6 +63,10 @@
 </template>
 
 <script setup lang="ts">
+// KeepAlive 需要组件 name 来匹配 include
+defineOptions({
+  name: 'explore',
+});
 import { ref, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { SearchOutline } from '@vicons/ionicons5';
@@ -94,7 +98,15 @@ function goUser(username: string) {
     router.push({ name: 'user', query: { s: username } });
 }
 
+// KeepAlive 模式下，避免每次进入都重新加载
+const hasLoaded = ref(false);
+
 onMounted(async () => {
+    // 已有数据，直接返回（KeepAlive 缓存）
+    if (hasLoaded.value && (trendingUsers.value.length > 0 || categories.value.length > 0)) {
+        return;
+    }
+
     // 加载 Trends 用户
     try {
         const res = await getIndexTrends({ page: 1, page_size: 5 });
@@ -126,6 +138,8 @@ onMounted(async () => {
     } catch {
         categories.value = [];
     }
+
+    hasLoaded.value = true;
 });
 </script>
 

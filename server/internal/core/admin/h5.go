@@ -177,6 +177,7 @@ type H5KolProfileItem struct {
 	MakeupStyle   string `json:"makeupStyle"`
 	CategoryID    int64  `json:"categoryId,string"`
 	SystemPrompt  string `json:"systemPrompt"`
+	Sort          int    `json:"sort"`
 	ApiKey        string `json:"apiKey"`
 }
 
@@ -200,7 +201,7 @@ type H5KolProfileSaveReq struct {
 	MakeupStyle   string `json:"makeupStyle"`
 	CategoryID    int64  `json:"categoryId,string"`
 	SystemPrompt  string `json:"systemPrompt"`
-	ApiKey        string `json:"apiKey"`
+	Sort          int    `json:"sort"`
 }
 
 // H5KolCategoryItem KOL分类
@@ -239,6 +240,7 @@ type H5KolManageItem struct {
 	Avatar       string `json:"avatar"`
 	CategoryID   int64  `json:"categoryId,string"`
 	CategoryName string `json:"categoryName"`
+	Sort         int    `json:"sort"`
 	Height       string `json:"height"`
 	Weight        string `json:"weight"`
 	Measurements  string `json:"measurements"`

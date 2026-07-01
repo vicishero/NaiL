@@ -74,6 +74,10 @@
 </template>
 
 <script setup lang="ts">
+// KeepAlive 需要组件 name 来匹配 include
+defineOptions({
+  name: 'home',
+});
 import { ref, onMounted, reactive, computed, watch, nextTick } from 'vue';
 import { useStoreMain } from '@/store/main';
 import { useRoute, useRouter } from 'vue-router';
@@ -260,6 +264,7 @@ onMounted(async () => {
   await nextTick();
   perfLog('Home.vue reset 完成, 开始加载帖子');
   loadPosts('newest');
+  hasLoaded.value = true;
 });
 
 // 监听帖子列表渲染完成
@@ -278,6 +283,9 @@ watch(
   }
 );
 
+// 标记是否是首次加载（KeepAlive 模式下避免每次进入都重新加载）
+const hasLoaded = ref(false);
+
 watch(
   () => ({
     path: route.path,
@@ -286,6 +294,7 @@ watch(
   }),
   (to, from) => {
     updateTitle();
+    // 只有用户手动触发刷新（refresh 变化）时才重新加载
     if (to.refresh !== from.refresh) {
       resetAll();
       setTimeout(() => {
@@ -294,7 +303,9 @@ watch(
       }, 0);
       return;
     }
-    if (from.path !== '/post' && to.path === '/') {
+    // KeepAlive 模式下，从其他页面回来时不重新加载，只保留现有数据
+    // 如果是首次进入且没有数据，才加载
+    if (!hasLoaded.value && list.value.length === 0) {
       resetAll();
       setTimeout(() => {
         const style = activeFeed.value === 'following' ? 'following' : 'newest';

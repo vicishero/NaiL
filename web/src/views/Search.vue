@@ -68,6 +68,10 @@
 </template>
 
 <script setup lang="ts">
+// KeepAlive 需要组件 name 来匹配 include
+defineOptions({
+  name: 'search',
+});
 import { ref, onMounted } from 'vue';
 import { SearchOutline } from '@vicons/ionicons5';
 import { getPosts, getTags } from '@/api/post';

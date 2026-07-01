@@ -11,6 +11,10 @@
 </template>
 
 <script setup lang="ts">
+// KeepAlive 需要组件 name 来匹配 include
+defineOptions({
+  name: 'assets',
+});
 import { WalletOutline } from '@vicons/ionicons5';
 </script>
 

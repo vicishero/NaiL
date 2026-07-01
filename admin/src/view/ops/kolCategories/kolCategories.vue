@@ -5,6 +5,7 @@
         <el-form-item>
           <el-button type="primary" icon="plus" @click="addCategory">新增分类</el-button>
           <el-button icon="refresh" @click="getTableData">刷新</el-button>
+          <el-button type="warning" icon="connection" @click="refreshExploreCache">刷新探索缓存</el-button>
         </el-form-item>
       </el-form>
     </div>
@@ -36,7 +37,7 @@
     </el-dialog>
 
     <!-- KOL用户列表弹窗 -->
-    <el-dialog v-model="kolDrawerVisible" :title="'KOL列表 - ' + currentCategoryName" width="700px">
+    <el-dialog v-model="kolDrawerVisible" :title="'KOL列表 - ' + currentCategoryName" width="850px">
       <div v-loading="kolLoading">
         <el-table :data="kolUsers" row-key="ID" max-height="450">
           <el-table-column align="left" label="ID" width="170" prop="ID" />
@@ -54,6 +55,15 @@
               <span v-else style="color:#c0c4cc">-</span>
             </template>
           </el-table-column>
+          <el-table-column align="left" label="排序" width="130">
+            <template #default="scope">
+              <div style="display:flex;align-items:center;gap:4px">
+                <span style="min-width:30px;text-align:center">{{ scope.row.sort }}</span>
+                <el-button :icon="ArrowUp" size="small" circle @click="scope.row.sort++;updateKolSort(scope.row)" />
+                <el-button :icon="ArrowDown" size="small" circle @click="scope.row.sort=Math.max(0,scope.row.sort-1);updateKolSort(scope.row)" />
+              </div>
+            </template>
+          </el-table-column>
         </el-table>
         <div v-if="kolUsers.length === 0 && !kolLoading" style="text-align:center;padding:40px;color:#909399">暂无KOL用户</div>
       </div>
@@ -62,9 +72,10 @@
 </template>
 
 <script setup>
-import { getKolCategoryList, saveKolCategory, deleteKolCategory, getKolManageList } from '@/api/h5Admin'
+import { getKolCategoryList, saveKolCategory, deleteKolCategory, getKolManageList, getKolProfile, saveKolProfileApi } from '@/api/h5Admin'
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { ArrowUp, ArrowDown } from '@element-plus/icons-vue'
 
 defineOptions({ name: 'kolCategories' })
 
@@ -74,7 +85,7 @@ const form = reactive({ ID: 0, name: '', sort: 0 })
 
 // KOL users panel
 const kolDrawerVisible = ref(false), kolLoading = ref(false)
-const kolUsers = ref([]), currentCategoryName = ref('')
+const kolUsers = ref([]), currentCategoryName = ref(''), currentCategoryId = ref(0)
 
 const getTableData = async () => {
   const res = await getKolCategoryList()
@@ -97,6 +108,7 @@ const deleteCategoryFunc = async (row) => {
 
 const viewKolUsers = async (row) => {
   currentCategoryName.value = row.name
+  currentCategoryId.value = row.ID
   kolDrawerVisible.value = true
   kolLoading.value = true
   try {
@@ -104,6 +116,32 @@ const viewKolUsers = async (row) => {
     if (res.code === 0) kolUsers.value = res.data?.list || []
   } catch { kolUsers.value = [] }
   finally { kolLoading.value = false }
+}
+
+const updateKolSort = async (row) => {
+  try {
+    const res = await getKolProfile({ userId: row.ID })
+    if (res.code === 0 && res.data) {
+      const profile = { ...res.data, sort: row.sort }
+      await saveKolProfileApi(profile)
+    } else {
+      await saveKolProfileApi({ userId: row.ID, sort: row.sort })
+    }
+    ElMessage.success('排序已更新')
+    // 重新加载KOL列表
+    kolLoading.value = true
+    const listRes = await getKolManageList({ categoryId: currentCategoryId.value, page: 1, pageSize: 100 })
+    if (listRes.code === 0) kolUsers.value = listRes.data?.list || []
+    kolLoading.value = false
+  } catch { ElMessage.error('更新失败') }
+}
+
+const refreshExploreCache = async () => {
+  try {
+    const res = await fetch(import.meta.env.VITE_HOST + '/v1/explore/refreshCache', { method: 'POST' })
+    const data = await res.json()
+    if (data.code === 0) ElMessage.success('探索缓存已刷新')
+  } catch { ElMessage.error('刷新失败') }
 }
 
 const formatAddressShort = (addr) => {

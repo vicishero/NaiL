@@ -14,19 +14,11 @@
 
                     <!-- 内容区 -->
                     <div class="content-wrap">
-                        <router-view
-                            v-slot="{ Component }"
-                        >
-                            <keep-alive>
-                                <component
-                                    v-if="$route.meta.keepAlive"
-                                    :is="Component"
-                                />
+                        <router-view v-slot="{ Component }">
+                                <!-- KeepAlive 缓存页面：底部导航5个Tab + 搜索 + AI聊天 -->
+                            <keep-alive :include="['home', 'explore', 'assets', 'messages', 'profile', 'search', 'chat']">
+                                <component :is="Component" />
                             </keep-alive>
-                            <component
-                                v-if="!$route.meta.keepAlive"
-                                :is="Component"
-                            />
                         </router-view>
                     </div>
 

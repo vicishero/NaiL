@@ -25,6 +25,11 @@ func registerExploreRoute(e *gin.Engine) {
 	aDao := adminDao.NewAdminDao(db)
 	aService := adminSvc.NewAdminService(aDao)
 
+	e.POST("/v1/explore/refreshCache", func(c *gin.Context) {
+		RefreshKolCategories()
+		app.NewResponse(c).ToResponse(gin.H{"msg": "缓存已刷新"})
+	})
+
 	e.GET("/v1/explore/kolCategories", func(c *gin.Context) {
 		// 尝试从 Redis 缓存读取
 		if _wc != nil {
